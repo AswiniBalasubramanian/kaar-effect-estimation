@@ -12,7 +12,16 @@ export function TopBar() {
   const { crumbs } = useTopBarContent();
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-sidebar relative">
+      <Image
+        src="/kaar-pattern.svg"
+        alt=""
+        aria-hidden="true"
+        width={458}
+        height={56}
+        className="pointer-events-none absolute top-0 right-0 -z-10 h-full w-auto select-none"
+      />
+
       <div className="flex h-14 w-12 shrink-0 items-center justify-center">
         <SidebarTrigger className="text-foreground" />
       </div>

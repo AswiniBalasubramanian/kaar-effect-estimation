@@ -43,7 +43,7 @@ export function ProjectCard({
     <Card className="gap-0 rounded-lg py-0">
       <CardHeader className="gap-2 px-5 pt-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="truncate text-base font-semibold text-card-foreground">
+          <h3 className="min-w-0 text-base font-semibold break-words text-card-foreground">
             {project.name}
           </h3>
           <div className="flex shrink-0 items-center gap-1">
@@ -88,7 +88,7 @@ export function ProjectCard({
 
             <Badge
               className={cn(
-                "shrink-0 rounded-full px-2 font-medium",
+                "shrink-0 rounded-md px-2 font-medium",
                 projectStatusBadgeClass[project.status]
               )}
             >

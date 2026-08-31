@@ -84,7 +84,7 @@ export function CreateProjectDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={nameId}>
-              Project Name <span className="text-destructive">*</span>
+              <span className="text-destructive">*</span> Project Name
             </Label>
             <Input
               id={nameId}

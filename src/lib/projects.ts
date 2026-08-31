@@ -9,7 +9,7 @@ export type ProjectType = "greenfield" | "brownfield" | "rollout";
 
 // Flat, borderless pastel fills in the style of Notion's select/tag colors.
 export const projectTypeBadgeClass: Record<ProjectType, string> = {
-  greenfield: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
+  greenfield: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300",
   brownfield: "bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300",
   rollout: "bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300",
 };
@@ -22,12 +22,25 @@ export const projectStatusLabel: Record<ProjectStatus, string> = {
   archived: "Archived",
 };
 
+// Bordered pastel style matching the "Seeded" master-data badge (border-{c}-200
+// bg-{c}-50 text-{c}-700 / dark:border-{c}-900 dark:bg-{c}-950 dark:text-{c}-400).
 export const projectStatusBadgeClass: Record<ProjectStatus, string> = {
-  draft: "bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300",
-  submitted: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
-  "in-estimate": "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300",
-  won: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
-  archived: "bg-stone-200 text-stone-600 dark:bg-stone-500/20 dark:text-stone-400",
+  draft: "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400",
+  submitted: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400",
+  "in-estimate": "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-400",
+  won: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400",
+  archived:
+    "border-[#6F4E37]/25 bg-[#6F4E37]/10 text-[#6F4E37] dark:border-[#6F4E37]/50 dark:bg-[#6F4E37]/25 dark:text-[#D2B48C]",
+};
+
+// Solid dot colors matching each status's badge hue, for use in the Status
+// select trigger/menu items.
+export const projectStatusDotClass: Record<ProjectStatus, string> = {
+  draft: "bg-gray-400 dark:bg-gray-500",
+  submitted: "bg-amber-500",
+  "in-estimate": "bg-blue-500",
+  won: "bg-emerald-500",
+  archived: "bg-[#6F4E37]",
 };
 
 export interface Project {

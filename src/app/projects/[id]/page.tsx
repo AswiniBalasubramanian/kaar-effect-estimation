@@ -3,7 +3,15 @@
 import { use, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
-import { Question, CopySimple, Trash } from "@phosphor-icons/react";
+import {
+  ArrowLeft,
+  CaretLineLeft,
+  CaretLineRight,
+  Check,
+  Question,
+  CopySimple,
+  Trash,
+} from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +65,7 @@ import {
   computeLevelCounts,
   overallLevel,
 } from "@/lib/org-complexity";
-import { projectStatusLabel, type Project } from "@/lib/projects";
+import { projectStatusDotClass, projectStatusLabel, type Project } from "@/lib/projects";
 
 const typeLabel: Record<Project["type"], string> = {
   greenfield: "Greenfield (New Implementation)",
@@ -211,7 +219,9 @@ export default function ProjectDetailPage({
   const [scopeCount, setScopeCount] = useState(0);
   const [fricewTotals, setFricewTotals] = useState({ objects: 0, devHours: 0 });
   const [statsExpanded, setStatsExpanded] = useState(true);
+  const [stepsNavCollapsed, setStepsNavCollapsed] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
 
   const orgMultiplier = useMemo(
     () => computeOrgMultiplier(defaultOrgComplexityFactors),
@@ -292,6 +302,7 @@ export default function ProjectDetailPage({
   }
 
   function handleSaveNext() {
+    setCompletedSteps((prev) => new Set(prev).add(activeStep));
     if (currentStepIndex < wizardSteps.length - 1) {
       setActiveStep(wizardSteps[currentStepIndex + 1].id);
     }
@@ -300,13 +311,13 @@ export default function ProjectDetailPage({
   return (
     <SidebarInset>
       <div className="shrink-0 border-b border-border bg-background">
-        <div className="mx-auto w-full max-w-[1400px] px-4 py-5 sm:px-6">
+        <div className="mx-auto w-full max-w-[1400px] px-6 py-3">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-base font-semibold tracking-tight text-pretty text-foreground sm:text-lg">
                 {project.name}
               </h1>
-              <div className="mt-1 flex flex-col gap-0.5">
+              <div className="mt-0.5 flex items-center gap-2">
                 <p className="text-xs text-muted-foreground">
                   {project.customer ?? "— no customer —"}
                 </p>
@@ -324,7 +335,7 @@ export default function ProjectDetailPage({
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <Label className="text-xs font-medium tracking-wide text-muted-foreground">
                   Status
                 </Label>
                 <Select
@@ -339,7 +350,13 @@ export default function ProjectDetailPage({
                   <SelectContent>
                     {(Object.keys(projectStatusLabel) as Project["status"][]).map((status) => (
                       <SelectItem key={status} value={status}>
-                        {projectStatusLabel[status]}
+                        <span className="flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className={cn("h-2 w-2 shrink-0 rounded-full", projectStatusDotClass[status])}
+                          />
+                          {projectStatusLabel[status]}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -347,7 +364,7 @@ export default function ProjectDetailPage({
               </div>
               <Button variant="outline" onClick={handleClone} className="h-8 gap-1.5">
                 <CopySimple className="h-4 w-4" />
-                Clone scenario
+                Clone
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -409,67 +426,121 @@ export default function ProjectDetailPage({
         </div>
       </div>
 
-      <div className="mx-auto flex min-h-0 w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 sm:flex-row sm:px-6">
+      <div className="flex min-h-0 w-full flex-1 flex-col sm:flex-row">
             <nav
               aria-label="Estimation wizard steps"
-              className="w-full shrink-0 sm:w-64 sm:border-r sm:border-border sm:pr-4"
+              className={cn(
+                "w-full shrink-0 bg-background sm:border-r sm:border-border",
+                stepsNavCollapsed ? "sm:w-16 sm:px-2" : "sm:w-64 sm:pr-4 sm:pl-2"
+              )}
             >
+              <div className="flex items-center justify-between gap-2 pt-6">
+                {!stepsNavCollapsed && (
+                  <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    Estimation Steps
+                  </h2>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStepsNavCollapsed((v) => !v)}
+                  aria-label={stepsNavCollapsed ? "Expand steps" : "Collapse steps"}
+                  className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {stepsNavCollapsed ? (
+                    <CaretLineRight className="h-3.5 w-3.5" />
+                  ) : (
+                    <CaretLineLeft className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
               <ul className="relative flex flex-col gap-1 py-6">
                 <span
                   aria-hidden="true"
-                  className="absolute top-11 bottom-11 left-[22px] w-px bg-border"
+                  className={cn(
+                    "absolute top-11 bottom-11 w-px bg-border",
+                    stepsNavCollapsed ? "left-1/2" : "left-[22px]"
+                  )}
                 />
                 {wizardSteps.map((step, index) => {
                   const active = step.id === activeStep;
+                  const completed = completedSteps.has(step.id);
+                  const circle = (
+                    <span
+                      className={cn(
+                        "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                        active || completed
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {completed && !active ? (
+                        <Check className="h-3.5 w-3.5" weight="bold" />
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
+                  );
                   return (
                     <li key={step.id}>
-                      <button
-                        type="button"
-                        onClick={() => setActiveStep(step.id)}
-                        className={cn(
-                          "flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left transition-colors",
-                          active ? "bg-primary/5" : "hover:bg-muted"
-                        )}
-                      >
-                        <span
+                      {stepsNavCollapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => setActiveStep(step.id)}
+                              className={cn(
+                                "flex w-full flex-col items-center gap-2 rounded-lg py-2 transition-colors",
+                                active ? "bg-primary/5" : "hover:bg-muted"
+                              )}
+                            >
+                              {circle}
+                              {active && (
+                                <span className="[text-orientation:sideways] [writing-mode:vertical-rl] rotate-180 py-1 text-xs font-semibold whitespace-nowrap text-primary">
+                                  {step.title}
+                                </span>
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">{step.title}</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setActiveStep(step.id)}
                           className={cn(
-                            "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                            active
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground"
+                            "flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left transition-colors",
+                            active ? "bg-primary/5" : "hover:bg-muted"
                           )}
                         >
-                          {index + 1}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-sm font-medium text-foreground">
-                            {step.title}
+                          {circle}
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium text-foreground">
+                              {step.title}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {step.subtitle}
+                            </span>
                           </span>
-                          <span className="block text-xs text-muted-foreground">
-                            {step.subtitle}
-                          </span>
-                        </span>
-                      </button>
+                        </button>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             </nav>
 
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-1 py-6">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-sidebar py-6 pr-3 pl-4">
               {activeStep === "profile-scope" ? (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <div className="flex flex-col gap-4 lg:col-span-2">
-              <Card className="gap-0 rounded-lg py-0">
+                <div className="flex flex-col gap-4">
+              <Card className="gap-0 overflow-hidden rounded-lg py-0">
+                <div className="flex items-center gap-1.5 border-b border-border bg-muted/40 px-5 py-4">
+                  <h2 className="text-base font-semibold text-card-foreground">
+                    Customer &amp; Project Profile
+                  </h2>
+                  <FieldHelp text="Basic customer context and delivery parameters used across every estimation step." />
+                </div>
                 <CardContent className="px-5 py-5">
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="text-base font-semibold text-card-foreground">
-                      Customer &amp; Project Profile
-                    </h2>
-                    <FieldHelp text="Basic customer context and delivery parameters used across every estimation step." />
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         HQ Location
@@ -610,7 +681,7 @@ export default function ProjectDetailPage({
                             className={cn(
                               "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                               selected
-                                ? "border-primary bg-primary text-primary-foreground"
+                                ? "border-primary bg-primary/5 text-primary"
                                 : "border-input bg-transparent text-foreground hover:bg-muted"
                             )}
                           >
@@ -623,137 +694,138 @@ export default function ProjectDetailPage({
                 </CardContent>
               </Card>
 
-              <Card className="gap-0 rounded-lg py-0">
-                <CardContent className="px-5 py-5">
-                  <div className="flex items-center justify-between gap-3">
+              <Card className="gap-0 overflow-hidden rounded-lg py-0">
+                <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-5 py-4">
+                  <div>
                     <div className="flex items-center gap-1.5">
                       <h2 className="text-base font-semibold text-card-foreground">
                         Org-Complexity Drivers ({defaultOrgComplexityFactors.length})
                       </h2>
                       <FieldHelp text="Numeric drivers compare against Low/Medium thresholds; picklist drivers map directly to a level. Blank stays Low." />
                     </div>
-                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                      {pendingCount} fields pending
-                    </span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Default Low is taken for computation if a driver is not provided as input.
+                    </p>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Default Low is taken for computation if a driver is not provided as input.
-                  </p>
+                  <span className="shrink-0 text-xs font-medium text-amber-600 dark:text-amber-400">
+                    {pendingCount} fields pending
+                  </span>
+                </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {defaultOrgComplexityFactors.map((factor) => {
-                      const meta = driverFieldMeta[factor.key];
-                      const value = driverValues[factor.key] ?? "";
-                      return (
-                        <div key={factor.key} className="flex flex-col gap-1.5">
-                          <Label className="flex items-center gap-1.5 text-sm">
-                            {factor.label}
-                            <FieldHelp text={meta.help} />
-                          </Label>
-                          {meta.type === "select" ? (
-                            <Select
-                              value={value || undefined}
-                              onValueChange={(v) => setDriverValue(factor.key, v)}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder={meta.placeholder} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Low">Low</SelectItem>
-                                <SelectItem value="Medium">Medium</SelectItem>
-                                <SelectItem value="High">High</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Input
-                              value={value}
-                              onChange={(e) => setDriverValue(factor.key, e.target.value)}
-                              placeholder={meta.placeholder}
-                              name={factor.key}
-                              autoComplete="off"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-              </div>
-
-              <Card className="gap-0 rounded-lg py-0">
-                <CardContent className="px-5 py-5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Org Complexity Multiplier
-                    </span>
-                    <FieldHelp text="orgMultiplier = round(average(all mapped factor multipliers), 4). Applies one overall complexity adjustment to Delivery and PMO effort." />
-                  </div>
-
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-3xl font-bold text-foreground tabular-nums">
-                      {orgMultiplier.toFixed(4)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">Overall</span>
-                    <Badge
-                      variant="outline"
-                      className={cn("rounded-md px-1.5", levelBadgeClass(overall))}
-                    >
-                      {overall}
-                    </Badge>
-                  </div>
-
-                  <div className="mt-2 flex items-center gap-3 text-xs font-medium">
-                    <span className="text-rose-600 dark:text-rose-400">
-                      {levelCounts.H} H
-                    </span>
-                    <span className="text-amber-600 dark:text-amber-400">
-                      {levelCounts.M} M
-                    </span>
-                    <span className="text-emerald-600 dark:text-emerald-400">
-                      {levelCounts.L} L
-                    </span>
-                  </div>
-
-                  <div className="max-h-72 overflow-y-auto rounded-lg border border-border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="font-semibold">Factor</TableHead>
-                          <TableHead className="font-semibold">Value</TableHead>
-                          <TableHead className="font-semibold">Lvl</TableHead>
-                          <TableHead className="text-right font-semibold">Mult</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {displayedFactors.map((factor) => (
-                          <TableRow key={factor.key}>
-                            <TableCell className="text-primary">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
+                  <div className="border-border p-5 lg:border-r">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {defaultOrgComplexityFactors.map((factor) => {
+                        const meta = driverFieldMeta[factor.key];
+                        const value = driverValues[factor.key] ?? "";
+                        return (
+                          <div key={factor.key} className="flex flex-col gap-1.5">
+                            <Label className="flex items-center gap-1.5 text-sm">
                               {factor.label}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground italic">
-                              {factor.value}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "rounded-md px-1.5",
-                                  levelBadgeClass(factor.level)
-                                )}
+                              <FieldHelp text={meta.help} />
+                            </Label>
+                            {meta.type === "select" ? (
+                              <Select
+                                value={value || undefined}
+                                onValueChange={(v) => setDriverValue(factor.key, v)}
                               >
-                                {factor.level}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right tabular-nums">
-                              {factor.multiplier.toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder={meta.placeholder} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Low">Low</SelectItem>
+                                  <SelectItem value="Medium">Medium</SelectItem>
+                                  <SelectItem value="High">High</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Input
+                                value={value}
+                                onChange={(e) => setDriverValue(factor.key, e.target.value)}
+                                placeholder={meta.placeholder}
+                                name={factor.key}
+                                autoComplete="off"
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </CardContent>
+
+                  <div className="p-5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Org Complexity Multiplier
+                      </span>
+                      <FieldHelp text="orgMultiplier = round(average(all mapped factor multipliers), 4). Applies one overall complexity adjustment to Delivery and PMO effort." />
+                    </div>
+
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-3xl font-bold text-foreground tabular-nums">
+                        {orgMultiplier.toFixed(4)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">Overall</span>
+                      <Badge
+                        variant="outline"
+                        className={cn("rounded-md px-1.5", levelBadgeClass(overall))}
+                      >
+                        {overall}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-3 text-xs font-medium">
+                      <span className="text-rose-600 dark:text-rose-400">
+                        {levelCounts.H} H
+                      </span>
+                      <span className="text-amber-600 dark:text-amber-400">
+                        {levelCounts.M} M
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        {levelCounts.L} L
+                      </span>
+                    </div>
+
+                    <div className="mt-3">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold">Factor</TableHead>
+                            <TableHead className="font-semibold">Value</TableHead>
+                            <TableHead className="font-semibold">Lvl</TableHead>
+                            <TableHead className="text-right font-semibold">Mult</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {displayedFactors.map((factor) => (
+                            <TableRow key={factor.key}>
+                              <TableCell className="text-primary">
+                                {factor.label}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground italic">
+                                {factor.value}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "rounded-md px-1.5",
+                                    levelBadgeClass(factor.level)
+                                  )}
+                                >
+                                  {factor.level}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {factor.multiplier.toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
               </Card>
                 </div>
               ) : activeStep === "scope-selection" ? (
@@ -790,17 +862,19 @@ export default function ProjectDetailPage({
 
       <div className="shrink-0 border-t border-border bg-background">
         <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Button type="button" variant="outline" onClick={handleResetCurrentStep}>
-            Reset to Defaults
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-1.5"
+            onClick={handleBack}
+            disabled={currentStepIndex === 0}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStepIndex === 0}
-            >
-              Back
+            <Button type="button" variant="outline" onClick={handleResetCurrentStep}>
+              Reset to Defaults
             </Button>
             <Button type="button" onClick={handleSaveNext} disabled={currentStepIndex === wizardSteps.length - 1}>
               {currentStepIndex === wizardSteps.length - 1 ? "Save" : "Save & Next"}

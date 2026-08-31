@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 function FieldHelp({ text }: { text: string }) {
   return (
@@ -104,44 +105,17 @@ export function EffortEstimateStep({
             ML ready
           </span>
         </div>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() => setMode("formula")}
-            className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-              mode === "formula"
-                ? "bg-primary text-primary-foreground"
-                : "border border-input text-foreground hover:bg-muted"
-            )}
-          >
-            Formula (KDM)
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("ml")}
-            className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-              mode === "ml"
-                ? "bg-primary text-primary-foreground"
-                : "border border-input text-muted-foreground hover:bg-muted"
-            )}
-          >
-            ML Prediction
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("compare")}
-            className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-              mode === "compare"
-                ? "bg-primary text-primary-foreground"
-                : "border border-input text-muted-foreground hover:bg-muted"
-            )}
-          >
-            Compare Both
-          </button>
-        </div>
+        <Tabs
+          value={mode}
+          onValueChange={(value) => setMode(value as "formula" | "ml" | "compare")}
+          className="mt-3"
+        >
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+            <TabsTrigger value="formula">Formula (KDM)</TabsTrigger>
+            <TabsTrigger value="ml">ML Prediction</TabsTrigger>
+            <TabsTrigger value="compare">Compare Both</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <p className="mt-2 text-xs text-muted-foreground">
           {mode === "formula" &&
             "Using the deterministic KDM formula engine. All effort values are reproducible from the frozen master snapshot."}
@@ -225,54 +199,51 @@ export function EffortEstimateStep({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="h-1 bg-primary" />
-          <div className="px-5 py-4">
+        <Card className="gap-1 py-4">
+          <CardHeader className="gap-1 px-4">
             <div className="flex items-center gap-1.5">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              <CardDescription className="text-xs font-medium tracking-wide uppercase">
                 Total Effort
-              </p>
+              </CardDescription>
               <FieldHelp text="Total Effort = sum of PMO hours + Delivery hours across all six phases." />
             </div>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+            <CardTitle className="text-2xl font-semibold tabular-nums">
               {totalEffort.toLocaleString(undefined, { maximumFractionDigits: 0 })} hrs
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              man-hours · org mult {orgMultiplier.toFixed(4)}
-            </p>
-          </div>
-        </div>
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="h-1 bg-primary" />
-          <div className="px-5 py-4">
+            </CardTitle>
+          </CardHeader>
+          <p className="px-4 text-xs text-muted-foreground">
+            man-hours · org mult {orgMultiplier.toFixed(4)}
+          </p>
+        </Card>
+        <Card className="gap-1 py-4">
+          <CardHeader className="gap-1 px-4">
             <div className="flex items-center gap-1.5">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              <CardDescription className="text-xs font-medium tracking-wide uppercase">
                 Delivery vs PMO
-              </p>
+              </CardDescription>
               <FieldHelp text="Delivery hours come from in-scope GSI work in Explore/Realize/Deploy. PMO hours are governance overhead spread across all six phases." />
             </div>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+            <CardTitle className="text-2xl font-semibold tabular-nums">
               {totalDelivery.toLocaleString(undefined, { maximumFractionDigits: 0 })} /{" "}
               {totalPmo.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Delivery / PMO man-hours</p>
-          </div>
-        </div>
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="h-1 bg-primary" />
-          <div className="px-5 py-4">
+            </CardTitle>
+          </CardHeader>
+          <p className="px-4 text-xs text-muted-foreground">Delivery / PMO man-hours</p>
+        </Card>
+        <Card className="gap-1 py-4">
+          <CardHeader className="gap-1 px-4">
             <div className="flex items-center gap-1.5">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              <CardDescription className="text-xs font-medium tracking-wide uppercase">
                 Peak FTE
-              </p>
+              </CardDescription>
               <FieldHelp text="Peak FTE is each phase's own FTE = CEILING(phase hrs / (phase weeks × 5 × hrs/day × 0.75), 0.5). Peak FTE shown is the max across all phases." />
             </div>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{peakFte}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              at {rows.find((r) => r.peakFte === peakFte)?.label ?? "—"}
-            </p>
-          </div>
-        </div>
+            <CardTitle className="text-2xl font-semibold tabular-nums">{peakFte}</CardTitle>
+          </CardHeader>
+          <p className="px-4 text-xs text-muted-foreground">
+            at {rows.find((r) => r.peakFte === peakFte)?.label ?? "—"}
+          </p>
+        </Card>
       </div>
 
       <div className="rounded-xl border border-border bg-card px-5 py-5">

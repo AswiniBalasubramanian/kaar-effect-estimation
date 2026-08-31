@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { GsiCatalogAdmin } from "@/components/gsi-catalog-admin";
 import { PageHeader } from "@/components/page-header";
 import { useSetTopBar } from "@/lib/top-bar-context";
 import {
@@ -17,7 +19,6 @@ import {
   rolesRows,
   thresholdSwitchFields,
   phaseTemplateRows,
-  type GsiCatalogRow,
   type ActivityEffortRow,
   type FricewObjectRow,
   type OrgComplexityRow,
@@ -27,25 +28,8 @@ import {
 
 function renderBody(slug: string) {
   switch (slug) {
-    case "gsi-catalog": {
-      const columns: DataTableColumn<GsiCatalogRow>[] = [
-        {
-          key: "scopeItemId",
-          header: "Scope Item",
-          render: (r) => <span className="font-mono text-xs">{r.scopeItemId}</span>,
-        },
-        { key: "product", header: "Product", render: (r) => r.product },
-        { key: "businessArea", header: "Business Area", render: (r) => r.businessArea },
-        { key: "process", header: "Process", render: (r) => r.process },
-        { key: "suggestedLevel", header: "Suggested Level", render: (r) => r.suggestedLevel },
-        {
-          key: "suggestedComplexity",
-          header: "Suggested Complexity",
-          render: (r) => r.suggestedComplexity,
-        },
-      ];
-      return <DataTable columns={columns} rows={gsiCatalogRows} pageSize={25} />;
-    }
+    case "gsi-catalog":
+      return <GsiCatalogAdmin initialRows={gsiCatalogRows} />;
     case "activity-effort": {
       const columns: DataTableColumn<ActivityEffortRow>[] = [
         { key: "activity", header: "Activity", render: (r) => r.activity },
@@ -150,12 +134,26 @@ export default function ConfigurationDetailPage({
   return (
     <SidebarInset>
       <PageHeader
-        title={category.title}
+        title={
+          <span className="inline-flex items-center gap-2">
+            {category.title}
+            <Badge variant="secondary" className="rounded-md px-2 font-medium">
+              {category.rowCount.toLocaleString()} row{category.rowCount === 1 ? "" : "s"}
+            </Badge>
+          </span>
+        }
         description={category.description}
         actions={
-          <Badge variant="secondary" className="shrink-0 rounded-md px-2 font-medium">
-            {category.version}
-          </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            {category.slug === "gsi-catalog" && (
+              <Button size="sm" variant="outline">
+                Publish version
+              </Button>
+            )}
+            <Badge variant="secondary" className="shrink-0 rounded-md px-2 font-medium">
+              {category.version}
+            </Badge>
+          </div>
         }
       />
 

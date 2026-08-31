@@ -18,7 +18,6 @@ import {
 import {
   dashboardStats,
   usageByUser,
-  projectStatusRows,
   goldenMasterOverrides,
   recentEstimates,
 } from "@/lib/dashboard-data";
@@ -59,67 +58,44 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 pt-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <h2 className="text-base font-semibold text-foreground">
-              Usage By User
-            </h2>
-            <div className="mt-3 overflow-x-auto rounded-lg border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead className="text-right">Projects</TableHead>
-                    <TableHead className="text-right">Estimates</TableHead>
-                    <TableHead>Last Activity</TableHead>
+        <div className="pt-6">
+          <h2 className="text-base font-semibold text-foreground">
+            Usage By User
+          </h2>
+          <div className="mt-3 overflow-x-auto rounded-lg border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead className="text-right">Projects</TableHead>
+                  <TableHead className="text-right">Estimates</TableHead>
+                  <TableHead>Last Activity</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {usageByUser.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium text-foreground">
+                      {row.email}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.projects}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.estimates}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {dateTimeFormat.format(new Date(row.lastActivity))}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usageByUser.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium text-foreground">
-                        {row.email}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.projects}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.estimates}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {dateTimeFormat.format(new Date(row.lastActivity))}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-base font-semibold text-foreground">
-              Project Status
-            </h2>
-            <div className="mt-3 flex flex-col gap-2 rounded-lg border border-border p-3">
-              {projectStatusRows.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center justify-between rounded-md border border-border px-3 py-2"
-                >
-                  <span className="text-sm font-medium text-foreground">
-                    {row.label}
-                  </span>
-                  <span className="text-sm font-semibold tabular-nums text-foreground">
-                    {row.count}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 pt-6 pb-2 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className="flex flex-col gap-6 pt-6 pb-2">
+          <div>
             <h2 className="text-base font-semibold text-foreground">
               Golden Master Overrides
             </h2>
@@ -169,10 +145,10 @@ export default function DashboardPage() {
               {recentEstimates.map((row) => (
                 <div
                   key={row.id}
-                  className="rounded-md border border-border p-3"
+                  className="rounded-md border border-border p-3 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 text-sm font-semibold break-words text-foreground">
+                    <p className="min-w-0 text-sm font-medium break-words text-foreground">
                       {row.project}
                     </p>
                     <Badge

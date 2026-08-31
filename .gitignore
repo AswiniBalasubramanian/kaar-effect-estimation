@@ -43,3 +43,5 @@ next-env.d.ts
 # backups and local runtime state
 *.bak
 .claude/scheduled_tasks.lock
+
+.vercel

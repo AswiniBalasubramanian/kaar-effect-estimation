@@ -8,7 +8,6 @@ import {
   BookOpen,
   SlidersHorizontal,
   Star,
-  Lifebuoy,
 } from "@phosphor-icons/react";
 
 import {
@@ -170,15 +169,6 @@ export function AppSidebar() {
                 </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Get help with navigation">
-              <Link href="/glossary">
-                <Lifebuoy />
-                <span>Get help with navigation</span>
-              </Link>
-            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

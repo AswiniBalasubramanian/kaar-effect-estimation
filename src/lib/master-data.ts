@@ -74,60 +74,103 @@ export function getCategory(slug: string) {
 // GSI Catalog
 // ---------------------------------------------------------------------------
 
+export type GsiInstanceDriver =
+  | "Fixed1"
+  | "LegalEntities"
+  | "Countries"
+  | "Plants"
+  | "SalesOrg"
+  | "PurchaseUnits"
+  | "Currencies";
+
 export interface GsiCatalogRow {
   id: string;
-  scopeItemId: string;
   product: string;
-  businessArea: string;
-  process: string;
-  suggestedLevel: "L1" | "L2" | "L3";
-  suggestedComplexity: "Simple" | "Medium" | "Complex";
+  l1BusinessArea: string;
+  l2ProcessGroup: string;
+  l3BusinessProcess: string;
+  processId: string;
+  description?: string;
+  defaultLevel: "L3" | "L4" | "L5";
+  defaultComplexity: "L" | "M" | "H";
+  defaultInstanceDriver: GsiInstanceDriver;
+  status: "Active" | "Inactive";
 }
 
 const GSI_BUSINESS_AREAS = [
+  "Buy & Receive",
   "Finance",
-  "Procurement",
-  "Sales",
   "Supply Chain",
+  "Sales",
   "HR",
   "Manufacturing",
   "Logistics",
-  "Reporting",
   "Master Data",
   "Compliance",
+  "Reporting",
 ];
 
-const GSI_PROCESSES = [
-  "Configuration",
-  "Integration",
-  "Data Migration",
+const GSI_PROCESS_GROUPS = [
+  "Admin",
+  "Business Network",
+  "Content Management",
   "Approval Workflow",
+  "Data Migration",
+  "Integration",
   "Reporting",
-  "Enhancement",
   "Testing",
   "Cutover",
+  "Enhancement",
 ];
 
-const GSI_LEVELS = ["L1", "L2", "L3"] as const;
-const GSI_COMPLEXITIES = ["Simple", "Medium", "Complex"] as const;
+const GSI_PROCESS_NAMES = [
+  "Setup & Configuration",
+  "Approval Workflow",
+  "Data Load",
+  "Validation & Approval",
+  "Notification & Activation",
+  "Monitoring & Reporting",
+  "Catalog Management",
+  "Contract Management",
+  "Spot Buy Management",
+  "Guided Buying",
+  "Release Management",
+  "Change Request Handling",
+];
+
+const GSI_LEVELS = ["L3", "L4", "L5"] as const;
+const GSI_COMPLEXITIES = ["L", "M", "H"] as const;
+const GSI_INSTANCE_DRIVERS: GsiInstanceDriver[] = [
+  "Fixed1",
+  "LegalEntities",
+  "Countries",
+  "Plants",
+  "SalesOrg",
+  "PurchaseUnits",
+  "Currencies",
+];
 
 function generateGsiRows(product: string, count: number): GsiCatalogRow[] {
   const rows: GsiCatalogRow[] = [];
-  const prefix = product.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
   for (let i = 0; i < count; i++) {
     const area = GSI_BUSINESS_AREAS[i % GSI_BUSINESS_AREAS.length];
-    const process =
-      GSI_PROCESSES[Math.floor(i / GSI_BUSINESS_AREAS.length) % GSI_PROCESSES.length];
+    const group =
+      GSI_PROCESS_GROUPS[Math.floor(i / GSI_BUSINESS_AREAS.length) % GSI_PROCESS_GROUPS.length];
+    const process = GSI_PROCESS_NAMES[i % GSI_PROCESS_NAMES.length];
     const level = GSI_LEVELS[i % GSI_LEVELS.length];
     const complexity = GSI_COMPLEXITIES[(i + Math.floor(i / 3)) % GSI_COMPLEXITIES.length];
+    const driver = GSI_INSTANCE_DRIVERS[i % GSI_INSTANCE_DRIVERS.length];
     rows.push({
       id: `${product}-${i + 1}`,
-      scopeItemId: `${prefix}-${String(i + 1).padStart(4, "0")}`,
       product,
-      businessArea: area,
-      process,
-      suggestedLevel: level,
-      suggestedComplexity: complexity,
+      l1BusinessArea: area,
+      l2ProcessGroup: group,
+      l3BusinessProcess: process,
+      processId: "—",
+      defaultLevel: level,
+      defaultComplexity: complexity,
+      defaultInstanceDriver: driver,
+      status: i % 47 === 0 ? "Inactive" : "Active",
     });
   }
   return rows;
