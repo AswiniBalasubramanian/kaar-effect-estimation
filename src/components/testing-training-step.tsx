@@ -4,8 +4,8 @@ import { useState, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 function FieldHelp({ text }: { text: string }) {
   return (
@@ -97,18 +97,12 @@ function ToggleRow({
           <span className="text-sm font-semibold text-card-foreground">{title}</span>
           <FieldHelp text={help} />
         </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          className={cn(
-            "shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-            enabled
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-input bg-transparent text-muted-foreground hover:bg-muted"
-          )}
-        >
-          {enabled ? "On" : "Off (default)"}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {enabled ? "On" : "Off (default)"}
+          </span>
+          <Switch checked={enabled} onCheckedChange={onToggle} />
+        </div>
       </div>
       {enabled && children && (
         <div className="mt-3 border-t border-border pt-3">{children}</div>

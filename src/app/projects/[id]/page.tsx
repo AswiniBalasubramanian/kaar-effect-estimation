@@ -311,7 +311,7 @@ export default function ProjectDetailPage({
   return (
     <SidebarInset>
       <div className="shrink-0 border-b border-border bg-background">
-        <div className="mx-auto w-full max-w-[1400px] px-6 py-3">
+        <div className="w-full px-6 py-3">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-base font-semibold tracking-tight text-pretty text-foreground sm:text-lg">
@@ -533,14 +533,14 @@ export default function ProjectDetailPage({
               {activeStep === "profile-scope" ? (
                 <div className="flex flex-col gap-4">
               <Card className="gap-0 overflow-hidden rounded-lg py-0">
-                <div className="flex items-center gap-1.5 border-b border-border bg-muted/40 px-5 py-4">
+                <div className="flex items-center gap-1.5 border-b border-border bg-gradient-to-r from-background to-muted px-5 py-4">
                   <h2 className="text-base font-semibold text-card-foreground">
                     Customer &amp; Project Profile
                   </h2>
                   <FieldHelp text="Basic customer context and delivery parameters used across every estimation step." />
                 </div>
                 <CardContent className="px-5 py-5">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         HQ Location
@@ -656,14 +656,18 @@ export default function ProjectDetailPage({
                     </div>
                   </div>
 
-                  <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
-                    <Checkbox
-                      checked={thirdParty}
-                      onCheckedChange={(checked) => setThirdParty(checked === true)}
-                    />
-                    3rd-party PMO / audit involved
-                    <FieldHelp text="Review overhead when an external PMO/audit party is involved." />
-                  </label>
+                  <div className="mt-4">
+                    <label className="flex items-center gap-2 text-sm text-foreground">
+                      <Checkbox
+                        checked={thirdParty}
+                        onCheckedChange={(checked) => setThirdParty(checked === true)}
+                      />
+                      3rd-party PMO / audit involved
+                    </label>
+                    <p className="mt-1 ml-6 text-xs text-muted-foreground">
+                      Review overhead when an external PMO/audit party is involved.
+                    </p>
+                  </div>
 
                   <div className="mt-4">
                     <Label className="flex items-center gap-1.5 text-sm">
@@ -695,7 +699,7 @@ export default function ProjectDetailPage({
               </Card>
 
               <Card className="gap-0 overflow-hidden rounded-lg py-0">
-                <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-5 py-4">
+                <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-r from-background to-muted px-5 py-4">
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h2 className="text-base font-semibold text-card-foreground">
@@ -712,9 +716,9 @@ export default function ProjectDetailPage({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px]">
                   <div className="border-border p-5 lg:border-r">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {defaultOrgComplexityFactors.map((factor) => {
                         const meta = driverFieldMeta[factor.key];
                         const value = driverValues[factor.key] ?? "";
@@ -832,6 +836,7 @@ export default function ProjectDetailPage({
                 <ScopeSelectionStep
                   key={`scope-selection-${resetSignal}`}
                   onInScopeChange={setScopeCount}
+                  selectedProducts={Array.from(sapProducts)}
                 />
               ) : activeStep === "fricew" ? (
                 <FricewStep key={`fricew-${resetSignal}`} onTotalsChange={setFricewTotals} />

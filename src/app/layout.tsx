@@ -5,11 +5,13 @@ import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
+import { AssistantDock } from "@/components/assistant-dock";
 import { FontPreferenceSync } from "@/components/font-preference-sync";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectsProvider } from "@/lib/projects-context";
 import { TopBarContentProvider } from "@/lib/top-bar-context";
+import { AssistantProvider } from "@/lib/assistant-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,16 +46,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <TooltipProvider delayDuration={200}>
           <ProjectsProvider>
             <TopBarContentProvider>
-              <SidebarProvider
-                className="h-svh flex-col overflow-hidden"
-                style={{ "--sidebar-width": "12rem" } as CSSProperties}
-              >
-                <TopBar />
-                <div className="flex min-h-0 flex-1">
-                  <AppSidebar />
-                  {children}
-                </div>
-              </SidebarProvider>
+              <AssistantProvider>
+                <SidebarProvider
+                  className="h-svh flex-col overflow-hidden"
+                  style={{ "--sidebar-width": "12rem" } as CSSProperties}
+                >
+                  <TopBar />
+                  <div className="flex min-h-0 flex-1">
+                    <AppSidebar />
+                    {children}
+                    <AssistantDock />
+                  </div>
+                </SidebarProvider>
+              </AssistantProvider>
             </TopBarContentProvider>
           </ProjectsProvider>
         </TooltipProvider>

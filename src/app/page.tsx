@@ -41,8 +41,8 @@ export default function ProjectsPage() {
         }
         description="SAP S/4HANA pre-sales engagements estimated with the Kaar Delivery Methodology"
         actions={
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-            <div className="relative">
+          <div className="flex flex-col flex-wrap gap-2.5 sm:flex-row sm:items-center">
+            <div className="relative min-w-0">
               <Search
                 aria-hidden="true"
                 className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -54,7 +54,7 @@ export default function ProjectsPage() {
                 aria-label="Search projects"
                 name="search"
                 autoComplete="off"
-                className="h-9 w-full pl-8 sm:w-64"
+                className="h-9 w-full min-w-0 pl-8 sm:w-48"
               />
             </div>
             <Button onClick={() => setCreateOpen(true)} className="h-9 gap-1.5 px-4">

@@ -78,8 +78,10 @@ let customGsiCounter = 0;
 
 export function ScopeSelectionStep({
   onInScopeChange,
+  selectedProducts,
 }: {
   onInScopeChange?: (count: number) => void;
+  selectedProducts?: string[];
 }) {
   const nameId = useId();
 
@@ -87,7 +89,19 @@ export function ScopeSelectionStep({
   const [selected, setSelected] = useState<Record<string, GsiComplexity>>({});
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  const visibleProducts = useMemo(
+    () =>
+      selectedProducts && selectedProducts.length > 0
+        ? sapProducts.filter((p) => selectedProducts.includes(p))
+        : sapProducts,
+    [selectedProducts]
+  );
+
   const [activeProduct, setActiveProduct] = useState<SapProduct>("S4H_OnPrem");
+
+  if (!visibleProducts.includes(activeProduct) && visibleProducts.length > 0) {
+    setActiveProduct(visibleProducts[0]);
+  }
   const [businessAreaFilter, setBusinessAreaFilter] = useState("all");
   const [processGroupFilter, setProcessGroupFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -310,7 +324,7 @@ export function ScopeSelectionStep({
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {sapProducts.map((product) => (
+            {visibleProducts.map((product) => (
               <button
                 key={product}
                 type="button"

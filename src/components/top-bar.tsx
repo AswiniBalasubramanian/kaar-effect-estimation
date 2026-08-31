@@ -2,14 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Sparkle } from "@phosphor-icons/react";
 
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { BreadcrumbTrail } from "@/components/breadcrumb-trail";
 import { useTopBarContent } from "@/lib/top-bar-context";
+import { useAssistant } from "@/lib/assistant-context";
 
 export function TopBar() {
   const { crumbs } = useTopBarContent();
+  const { toggle } = useAssistant();
 
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-sidebar relative">
@@ -48,6 +52,19 @@ export function TopBar() {
           </div>
         </>
       )}
+
+      <div className="ml-auto flex h-14 shrink-0 items-center pr-3">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="gradient-border-spin gap-1.5"
+          onClick={toggle}
+        >
+          <Sparkle className="h-4 w-4 text-orange-500" />
+          Assistant
+        </Button>
+      </div>
     </header>
   );
 }

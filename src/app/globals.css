@@ -132,3 +132,23 @@ html[data-font="figtree"] {
     @apply font-sans;
   }
 }
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-spin {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+.gradient-border-spin {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--secondary), var(--secondary)) padding-box,
+    conic-gradient(from var(--border-angle), #f97316, #ef4444, #f97316) border-box;
+  animation: border-spin 3s linear infinite;
+}
