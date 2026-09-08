@@ -163,6 +163,9 @@ export function AppSidebar() {
                         <DropdownMenuRadioItem value="figtree">
                           Figtree
                         </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="dm-sans">
+                          DM Sans
+                        </DropdownMenuRadioItem>
                       </DropdownMenuRadioGroup>
                     </DropdownMenuSubContent>
                   </DropdownMenuPortal>

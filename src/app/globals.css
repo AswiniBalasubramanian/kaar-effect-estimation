@@ -121,6 +121,10 @@ html[data-font="figtree"] {
   --font-geist-sans: var(--font-figtree-sans);
 }
 
+html[data-font="dm-sans"] {
+  --font-geist-sans: var(--font-dm-sans-sans);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

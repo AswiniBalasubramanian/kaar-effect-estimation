@@ -3,14 +3,14 @@
 import * as React from "react"
 
 export const FONT_STORAGE_KEY = "kee-font-preference"
-export type FontPreference = "geist" | "figtree"
+export type FontPreference = "geist" | "figtree" | "dm-sans"
 const DEFAULT_FONT: FontPreference = "geist"
 
 type Listener = () => void
 const listeners = new Set<Listener>()
 
 function isFontPreference(value: string | null): value is FontPreference {
-  return value === "geist" || value === "figtree"
+  return value === "geist" || value === "figtree" || value === "dm-sans"
 }
 
 function subscribe(callback: Listener) {

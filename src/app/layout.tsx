@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Figtree } from "next/font/google";
+import { Geist, Geist_Mono, Figtree, DM_Sans } from "next/font/google";
 import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -28,6 +28,11 @@ const figtree = Figtree({
   subsets: ["latin"],
 });
 
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans-sans",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "KaarTech Effort Estimator",
   description:
@@ -39,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-font="geist"
-      className={`${geistSans.variable} ${geistMono.variable} ${figtree.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${figtree.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <FontPreferenceSync />

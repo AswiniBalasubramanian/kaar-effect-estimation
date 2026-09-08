@@ -218,7 +218,7 @@ export default function ProjectDetailPage({
   const [driverValues, setDriverValues] = useState<Record<string, string>>({});
   const [scopeCount, setScopeCount] = useState(0);
   const [fricewTotals, setFricewTotals] = useState({ objects: 0, devHours: 0 });
-  const [statsExpanded, setStatsExpanded] = useState(true);
+  const [statsExpanded, setStatsExpanded] = useState(false);
   const [stepsNavCollapsed, setStepsNavCollapsed] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
