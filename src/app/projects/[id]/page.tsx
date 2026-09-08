@@ -529,7 +529,7 @@ export default function ProjectDetailPage({
               </ul>
             </nav>
 
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-sidebar py-6 pr-3 pl-4">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-gray-100 py-6 pr-3 pl-4 dark:bg-gray-900">
               {activeStep === "profile-scope" ? (
                 <div className="flex flex-col gap-4">
               <Card className="gap-0 overflow-hidden rounded-lg py-0">
