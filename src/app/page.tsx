@@ -64,7 +64,7 @@ export default function ProjectsPage() {
             </Badge>
           </span>
         }
-        description="SAP S/4HANA pre-sales engagements estimated with the Kaar Delivery Methodology"
+        description="Estimate your SAP S/4HANA pre-sales engagements with the Kaar Delivery Methodology."
         actions={
           <div className="flex flex-col flex-wrap gap-2.5 sm:flex-row sm:items-center">
             <div className="relative min-w-0">
@@ -162,7 +162,7 @@ export default function ProjectsPage() {
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50">
-        <div className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-4 sm:py-8">
+        <div className="mx-auto w-full max-w-[1400px] px-2 py-6 sm:px-3 sm:py-8">
           {filteredProjects.length > 0 ? (
             view === "table" ? (
               <ProjectsTable
@@ -186,9 +186,9 @@ export default function ProjectsPage() {
             <div className="mt-3 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-20 text-center">
               <FolderOpen className="h-8 w-8 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-foreground">No projects found</p>
+                <p className="text-sm font-medium text-foreground">We couldn&apos;t find any projects</p>
                 <p className="text-sm text-muted-foreground">
-                  Try a different search, or create a new project.
+                  Try a different search, or create a new project to get started.
                 </p>
               </div>
             </div>

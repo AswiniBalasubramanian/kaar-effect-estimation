@@ -12,7 +12,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     slug: "gsi-catalog",
     title: "GSI Catalog",
     description:
-      "Global Scope Items by product, business area and process. Complexity / level here are SUGGESTED DEFAULTS only — the authoritative complexity is set per project in a project's Scope Selection step.",
+      "Global Scope Items across products, business areas, and processes. Complexity and level here are suggested defaults — set the actual complexity for your project in its Scope Selection step.",
     rowCount: 1335,
     version: "v2",
     breakdown: [

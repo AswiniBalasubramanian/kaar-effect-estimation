@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowClockwise as RefreshCw, ArrowRight } from "@phosphor-icons/react";
+import {
+  ArrowClockwise as RefreshCw,
+  ArrowRight,
+} from "@phosphor-icons/react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/page-header";
@@ -16,6 +19,7 @@ import { useSetTopBar } from "@/lib/top-bar-context";
 export default function ConfigurationPage() {
   const [seeding, setSeeding] = useState(false);
   const [seededAt, setSeededAt] = useState<Date | null>(null);
+  const [statusDismissed, setStatusDismissed] = useState(false);
 
   const crumbs = useMemo(() => [{ label: "Configuration" }], []);
   useSetTopBar(crumbs);
@@ -31,17 +35,27 @@ export default function ConfigurationPage() {
   return (
     <SidebarInset>
       <PageHeader
+        icon={
+          <Image
+            src="/config-illustration.svg"
+            alt=""
+            aria-hidden="true"
+            width={56}
+            height={56}
+            className="h-14 w-14 shrink-0"
+          />
+        }
         title="Configuration"
-        description="Org-level master data that drives every estimate. Maintained centrally, versioned, and applied across all projects."
+        description="Manage the org-level master data that drives every estimate — maintained centrally and applied across all your projects."
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[1400px] px-4 pt-3 pb-6 sm:px-6 sm:pt-4 sm:pb-8">
-        <Card className="gap-0 overflow-hidden rounded-xl bg-gradient-to-b from-muted to-background py-0">
-          <CardContent className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50">
+        <div className="mx-auto w-full max-w-[1400px] px-2 pt-3 pb-6 sm:px-3 sm:pt-4 sm:pb-8">
+        {!statusDismissed && (
+          <div className="relative flex items-start gap-3 overflow-hidden rounded-xl bg-orange-50 px-5 py-4 dark:bg-orange-950/40">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-card-foreground">
+                <h2 className="text-sm font-semibold text-foreground">
                   Master Data Status
                 </h2>
                 <Badge className="rounded-md border-emerald-200 bg-emerald-50 px-2 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
@@ -59,21 +73,31 @@ export default function ConfigurationPage() {
                   </span>
                 )}
               </p>
+              <div className="mt-2 flex items-center gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={handleReseed}
+                  disabled={seeding}
+                  className="inline-flex items-center gap-1 font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-60 dark:text-orange-400"
+                >
+                  <RefreshCw
+                    aria-hidden="true"
+                    className={cn("h-3.5 w-3.5", seeding && "animate-spin")}
+                  />
+                  {seeding ? "Seeding…" : "Re-seed (idempotent)"}
+                </button>
+                <span className="text-muted-foreground">·</span>
+                <button
+                  type="button"
+                  onClick={() => setStatusDismissed(true)}
+                  className="font-medium text-orange-700 underline-offset-2 hover:underline dark:text-orange-400"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleReseed}
-              disabled={seeding}
-              className="h-9 gap-1.5 px-4 sm:shrink-0"
-            >
-              <RefreshCw
-                aria-hidden="true"
-                className={cn("h-4 w-4", seeding && "animate-spin")}
-              />
-              {seeding ? "Seeding…" : "Re-seed (idempotent)"}
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 xl:grid-cols-3">
           {masterDataCategories.map((category) => (
@@ -108,20 +132,6 @@ export default function ConfigurationPage() {
                 <p className="text-sm text-muted-foreground">
                   {category.description}
                 </p>
-
-                {category.breakdown && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {category.breakdown.map((b) => (
-                      <Badge
-                        key={b.label}
-                        variant="secondary"
-                        className="rounded-md px-2 font-medium"
-                      >
-                        {b.label}: {b.count}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}

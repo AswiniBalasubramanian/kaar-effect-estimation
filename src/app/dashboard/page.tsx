@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +40,18 @@ export default function DashboardPage() {
   return (
     <SidebarInset>
       <PageHeader
+        icon={
+          <Image
+            src="/widget-illustration.png"
+            alt=""
+            aria-hidden="true"
+            width={56}
+            height={56}
+            className="h-14 w-14 shrink-0"
+          />
+        }
         title="Usage Dashboard"
-        description="Project activity, estimation volume, and golden master override behavior across the organisation."
+        description="See project activity, estimation volume, and how your organisation overrides golden masters."
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto">

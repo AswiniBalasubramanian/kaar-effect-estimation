@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
-  CaretLineLeft,
-  CaretLineRight,
+  SidebarSimple,
   Check,
   Question,
   CopySimple,
@@ -446,11 +445,7 @@ export default function ProjectDetailPage({
                   aria-label={stepsNavCollapsed ? "Expand steps" : "Collapse steps"}
                   className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  {stepsNavCollapsed ? (
-                    <CaretLineRight className="h-3.5 w-3.5" />
-                  ) : (
-                    <CaretLineLeft className="h-3.5 w-3.5" />
-                  )}
+                  <SidebarSimple className="h-3.5 w-3.5" />
                 </button>
               </div>
               <ul className="relative flex flex-col gap-1 py-6">

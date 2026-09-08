@@ -118,8 +118,8 @@ export function ProjectsTable({
                           Delete &ldquo;{project.name}&rdquo;?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will permanently remove the project and its
-                          estimate. This action cannot be undone.
+                          You&apos;ll permanently remove this project and its
+                          estimate. You can&apos;t undo this.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

@@ -78,7 +78,7 @@ export function CreateProjectDialog({
           <DialogHeader>
             <DialogTitle>Create Project</DialogTitle>
             <DialogDescription>
-              Set up a new SAP S/4HANA engagement to start estimating.
+              Set up your new SAP S/4HANA engagement so you can start estimating.
             </DialogDescription>
           </DialogHeader>
 

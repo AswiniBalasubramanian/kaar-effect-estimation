@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 
 import { SidebarInset } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/page-header";
@@ -31,8 +32,18 @@ export default function GlossaryPage() {
   return (
     <SidebarInset>
       <PageHeader
+        icon={
+          <Image
+            src="/book-illustration.svg"
+            alt=""
+            aria-hidden="true"
+            width={56}
+            height={56}
+            className="h-14 w-14 shrink-0"
+          />
+        }
         title="Glossary & Formula Guide"
-        description="Plain-English reference for estimator inputs, configuration fields, calculations, and how each item contributes to the final effort and resource outputs."
+        description="Look up what each estimator input, configuration field, and calculation means, and how it shapes your final effort and resource outputs."
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto">

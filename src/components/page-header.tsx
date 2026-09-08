@@ -22,7 +22,7 @@ export function PageHeader({
         className
       )}
     >
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col flex-wrap gap-4 px-3 py-2 sm:flex-row sm:items-start sm:justify-between sm:px-4 sm:py-3">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col flex-wrap gap-4 px-2 py-2 sm:flex-row sm:items-start sm:justify-between sm:px-3 sm:py-3">
         <div className="flex min-w-0 items-center gap-1.5">
           {icon}
           <div className="min-w-0">
