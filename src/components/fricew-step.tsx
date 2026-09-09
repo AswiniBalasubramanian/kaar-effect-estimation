@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 import { CheckCircle, Code, ProhibitInset } from "@phosphor-icons/react";
 
@@ -96,7 +97,7 @@ export function FricewStep({
   return (
     <div>
       <div className="flex items-center gap-1.5">
-        <h2 className="text-base font-semibold text-card-foreground">
+        <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">
           FRICEW — Custom Development Objects
         </h2>
         <FieldHelp text="Forms, Reports, Interfaces, Conversions, Enhancements, Workflow, Fiori/Custom, and Analytics objects, sized by a Low/Medium/High man-day master." />
@@ -112,7 +113,16 @@ export function FricewStep({
             onClick={() => setHasDevEffort(true)}
             className="relative rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted/50"
           >
-            <Code className="h-5 w-5 text-muted-foreground" />
+            <Code className="absolute top-4 left-4 h-5 w-5 text-muted-foreground" />
+            <Image
+              src="/objdevtime.png"
+              alt=""
+              aria-hidden="true"
+              width={320}
+              height={320}
+              quality={100}
+              className="mt-2 h-auto w-1/2 object-contain"
+            />
             <p className="mt-2 text-sm font-semibold text-foreground">
               I have development effort
             </p>
@@ -126,7 +136,16 @@ export function FricewStep({
             onClick={() => setHasDevEffort(false)}
             className="relative rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted/50"
           >
-            <ProhibitInset className="h-5 w-5 text-muted-foreground" />
+            <ProhibitInset className="absolute top-4 left-4 h-5 w-5 text-muted-foreground" />
+            <Image
+              src="/nodevtime.png"
+              alt=""
+              aria-hidden="true"
+              width={320}
+              height={320}
+              quality={100}
+              className="mt-2 h-auto w-1/2 object-contain"
+            />
             <p className="mt-2 text-sm font-semibold text-foreground">
               I don&rsquo;t have development effort
             </p>

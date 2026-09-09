@@ -6,11 +6,13 @@ import {
   CaretRight,
   Columns as ColumnsIcon,
   FunnelSimple,
-  Rows as RowsIcon,
+  MagnifyingGlass as Search,
+  Stack,
 } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -68,6 +70,9 @@ export function DataTable<T extends { id: string }>({
   const [groupBy, setGroupBy] = useState("none");
   const [filters, setFilters] = useState<Record<string, Set<string>>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+
+  const searchableColumns = useMemo(() => columns.filter((c) => c.getValue), [columns]);
 
   const groupableColumns = useMemo(
     () => columns.filter((c) => c.groupable && c.getValue),
@@ -103,16 +108,26 @@ export function DataTable<T extends { id: string }>({
   const hiddenCount = columns.length - visibleColumns.length;
 
   const filteredRows = useMemo(() => {
-    if (activeFilterCount === 0) return rows;
-    return rows.filter((row) =>
-      filterableColumns.every((col) => {
-        const selected = filters[col.key];
-        const domain = filterDomains.get(col.key) ?? [];
-        if (!selected || selected.size === 0 || selected.size === domain.length) return true;
-        return selected.has(col.getValue!(row));
-      })
-    );
-  }, [rows, filterableColumns, filters, filterDomains, activeFilterCount]);
+    const q = search.trim().toLowerCase();
+    return rows.filter((row) => {
+      if (activeFilterCount > 0) {
+        const passesFilters = filterableColumns.every((col) => {
+          const selected = filters[col.key];
+          const domain = filterDomains.get(col.key) ?? [];
+          if (!selected || selected.size === 0 || selected.size === domain.length) return true;
+          return selected.has(col.getValue!(row));
+        });
+        if (!passesFilters) return false;
+      }
+      if (q) {
+        const matches = searchableColumns.some((col) =>
+          col.getValue!(row).toLowerCase().includes(q)
+        );
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [rows, filterableColumns, filters, filterDomains, activeFilterCount, search, searchableColumns]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages - 1);
@@ -154,8 +169,6 @@ export function DataTable<T extends { id: string }>({
     });
   }
 
-  const showToolbar = filterableColumns.length > 0 || groupableColumns.length > 0 || columns.length > 1;
-
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
@@ -166,148 +179,174 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <div>
-      {showToolbar && (
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {filterableColumns.length > 0 && (
-            <Popover>
+      <div className="mb-3 flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+        {filterableColumns.length > 0 && (
+          <FunnelSimple className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        )}
+        {filterableColumns.map((col) => {
+          const domain = filterDomains.get(col.key) ?? [];
+          const selected = filters[col.key] ?? new Set(domain);
+          const isActive = selected.size > 0 && selected.size < domain.length;
+          return (
+            <Popover key={col.key}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "gap-1.5",
-                    activeFilterCount > 0 &&
+                    "gap-1.5 rounded-full",
+                    isActive &&
                       "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
                   )}
                 >
-                  <FunnelSimple className="h-3.5 w-3.5" />
-                  Filters
-                  {activeFilterCount > 0 && <ToolbarCountBadge count={activeFilterCount} />}
+                  {col.header}
+                  {isActive && <ToolbarCountBadge count={selected.size} />}
+                  <CaretDown className="h-3 w-3" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-64">
+              <PopoverContent align="start" className="w-56">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Filters
+                    {col.header}
                   </span>
-                  {activeFilterCount > 0 && (
+                  {isActive && (
                     <button
                       type="button"
-                      onClick={() => setFilters({})}
+                      onClick={() =>
+                        setFilters((prev) => {
+                          const next = { ...prev };
+                          delete next[col.key];
+                          return next;
+                        })
+                      }
                       className="text-xs font-medium text-primary hover:underline"
                     >
                       Reset
                     </button>
                   )}
                 </div>
-                <div className="flex max-h-72 flex-col gap-3 overflow-y-auto pr-1">
-                  {filterableColumns.map((col) => {
-                    const domain = filterDomains.get(col.key) ?? [];
-                    const selected = filters[col.key] ?? new Set(domain);
-                    return (
-                      <div key={col.key} className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-foreground">
-                          {col.header}
-                        </span>
-                        <div className="flex flex-col gap-1">
-                          {domain.map((value) => (
-                            <label
-                              key={value}
-                              className="flex items-center gap-2 text-sm text-foreground"
-                            >
-                              <Checkbox
-                                checked={selected.has(value)}
-                                onCheckedChange={(checked) => {
-                                  setFilters((prev) => {
-                                    const base = prev[col.key] ?? new Set(domain);
-                                    const next = new Set(base);
-                                    if (checked) next.add(value);
-                                    else next.delete(value);
-                                    return { ...prev, [col.key]: next };
-                                  });
-                                }}
-                              />
-                              {value}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-
-          {groupableColumns.length > 0 && (
-            <Select
-              value={groupBy}
-              onValueChange={(v) => {
-                setGroupBy(v);
-                setCollapsedGroups(new Set());
-              }}
-            >
-              <SelectTrigger
-                size="sm"
-                className={cn(
-                  isGrouped &&
-                    "border-primary/40 bg-primary/5 text-primary dark:bg-primary/10"
-                )}
-              >
-                <RowsIcon className="h-3.5 w-3.5" />
-                <SelectValue placeholder="Group by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No grouping</SelectItem>
-                {groupableColumns.map((col) => (
-                  <SelectItem key={col.key} value={col.key}>
-                    Group by {col.header}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {columns.length > 1 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "gap-1.5",
-                    hiddenCount > 0 &&
-                      "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
-                  )}
-                >
-                  <ColumnsIcon className="h-3.5 w-3.5" />
-                  Columns
-                  {hiddenCount > 0 && <ToolbarCountBadge count={hiddenCount} />}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-56">
-                <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Visible columns
-                </span>
-                <div className="flex flex-col gap-1.5">
-                  {columns.map((col) => (
+                <div className="mt-1 flex flex-col gap-1">
+                  {domain.map((value) => (
                     <label
-                      key={col.key}
+                      key={value}
                       className="flex items-center gap-2 text-sm text-foreground"
                     >
                       <Checkbox
-                        checked={!hiddenColumns.has(col.key)}
-                        onCheckedChange={() => toggleColumn(col.key)}
+                        checked={selected.has(value)}
+                        onCheckedChange={(checked) => {
+                          setFilters((prev) => {
+                            const base = prev[col.key] ?? new Set(domain);
+                            const next = new Set(base);
+                            if (checked) next.add(value);
+                            else next.delete(value);
+                            return { ...prev, [col.key]: next };
+                          });
+                        }}
                       />
-                      {col.header}
+                      {value}
                     </label>
                   ))}
                 </div>
               </PopoverContent>
             </Popover>
-          )}
+          );
+        })}
+
+        {groupableColumns.length > 0 && (
+          <Select
+            value={groupBy}
+            onValueChange={(v) => {
+              setGroupBy(v);
+              setCollapsedGroups(new Set());
+            }}
+          >
+            <SelectTrigger
+              size="sm"
+              className={cn(
+                "shrink-0",
+                isGrouped &&
+                  "border-primary/40 bg-primary/5 text-primary dark:bg-primary/10"
+              )}
+            >
+              <Stack className="h-3.5 w-3.5" />
+              <SelectValue placeholder="Group by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No grouping</SelectItem>
+              {groupableColumns.map((col) => (
+                <SelectItem key={col.key} value={col.key}>
+                  Group by {col.header}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {columns.length > 1 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "shrink-0 gap-1.5",
+                  hiddenCount > 0 &&
+                    "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
+                )}
+              >
+                <ColumnsIcon className="h-3.5 w-3.5" />
+                Columns
+                {hiddenCount > 0 && <ToolbarCountBadge count={hiddenCount} />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-56">
+              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Visible columns
+              </span>
+              <div className="flex flex-col gap-1.5">
+                {columns.map((col) => (
+                  <label
+                    key={col.key}
+                    className="flex items-center gap-2 text-sm text-foreground"
+                  >
+                    <Checkbox
+                      checked={!hiddenColumns.has(col.key)}
+                      onCheckedChange={() => toggleColumn(col.key)}
+                    />
+                    {col.header}
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="shrink-0 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+        <div className="relative w-56 shrink-0">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Search"
+            className="h-8 pl-8"
+            autoComplete="off"
+          />
         </div>
-      )}
+      </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
         <Table>

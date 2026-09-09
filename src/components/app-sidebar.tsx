@@ -63,7 +63,7 @@ export function AppSidebar() {
       className="top-12 h-[calc(100svh-3rem)]"
     >
       <SidebarContent>
-        <SidebarGroup className="pt-0">
+        <SidebarGroup className="pt-3">
           <SidebarGroupContent>
             <SidebarMenu>
               {navLinks.map((link) => {
@@ -116,7 +116,11 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" tooltip="Aswini">
+                <SidebarMenuButton
+                  size="lg"
+                  tooltip="Aswini"
+                  className="bg-white hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-900"
+                >
                   <Avatar className="h-6 w-6 border border-sidebar-border">
                     <AvatarFallback className="bg-sidebar-primary/15 text-xs font-medium text-sidebar-primary">
                       A

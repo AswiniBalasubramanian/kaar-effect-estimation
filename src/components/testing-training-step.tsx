@@ -5,6 +5,26 @@ import { useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+function FieldHelp({ text }: { text: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[10px] leading-none">
+            ?
+          </span>
+          <span className="sr-only">Help</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top">{text}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface MasterRow {
   activity: string;
@@ -71,11 +91,11 @@ function ToggleRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card px-5 py-4">
+    <div className="rounded-xl bg-muted/60 px-5 py-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           <span className="text-sm font-semibold text-card-foreground">{title}</span>
-          <span className="text-xs text-muted-foreground">{help}</span>
+          <FieldHelp text={help} />
         </div>
         <Switch checked={enabled} onCheckedChange={onToggle} className="shrink-0" />
       </div>
@@ -127,16 +147,18 @@ export function TestingTrainingStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-border bg-card px-5 py-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-base font-semibold text-card-foreground">
-            Already in the base estimate - Testing &amp; Data
-          </h2>
-          <Badge className="rounded-md border-emerald-200 bg-emerald-50 px-1.5 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
-            Counted Per In-Scope Global Scope Item
-          </Badge>
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="-mx-5 -mt-5 mb-4 w-[calc(100%+2.5rem)] rounded-t-xl border-b border-border bg-muted/50 px-5 py-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">
+              Already in the base estimate - Testing &amp; Data
+            </h2>
+            <Badge className="rounded-md border-emerald-200 bg-emerald-50 px-1.5 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
+              Counted Per In-Scope Global Scope Item
+            </Badge>
+          </div>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           System Integration Test, User Acceptance Test, unit testing, Solution Walkthrough,
           and data migration run <span className="font-medium text-foreground">per in-scope Global Scope Item</span> ({inScopeCount} selected)
           at each Global Scope Item&rsquo;s own complexity. They are{" "}

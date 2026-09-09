@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ScopeSelectionStep } from "@/components/scope-selection-step";
+import type { GsiCatalogItem } from "@/lib/gsi-catalog";
 import { FricewStep } from "@/components/fricew-step";
 import { TestingTrainingStep } from "@/components/testing-training-step";
 import { EffortEstimateStep } from "@/components/effort-estimate-step";
@@ -224,6 +225,7 @@ export default function ProjectDetailPage({
   const [sapProducts, setSapProducts] = useState<Set<string>>(new Set());
   const [driverValues, setDriverValues] = useState<Record<string, string>>({});
   const [scopeCount, setScopeCount] = useState(0);
+  const [scopeItems, setScopeItems] = useState<GsiCatalogItem[]>([]);
   const [fricewTotals, setFricewTotals] = useState({ objects: 0, devHours: 0 });
   const [statsExpanded, setStatsExpanded] = useState(false);
   const [profileCollapsed, setProfileCollapsed] = useState(false);
@@ -254,6 +256,17 @@ export default function ProjectDetailPage({
         ...factor,
         value: driverValues[factor.key] || factor.value,
       })),
+    [driverValues]
+  );
+  const assumptionRows = useMemo(
+    () =>
+      defaultOrgComplexityFactors
+        .filter((f) => !driverValues[f.key])
+        .map((f) => ({
+          field: `driver:${f.key.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())}`,
+          default: "Low",
+          reason: `Driver '${f.label}' missing/blank — default → Low (mult 1)`,
+        })),
     [driverValues]
   );
 
@@ -841,6 +854,7 @@ export default function ProjectDetailPage({
                 <ScopeSelectionStep
                   key={`scope-selection-${resetSignal}`}
                   onInScopeChange={setScopeCount}
+                  onSelectedItemsChange={setScopeItems}
                   selectedProducts={Array.from(sapProducts)}
                 />
               ) : activeStep === "fricew" ? (
@@ -863,6 +877,8 @@ export default function ProjectDetailPage({
                   hoursPerDay={Number(hoursPerDay) || 8}
                   industry={industry}
                   orgMultiplier={orgMultiplier}
+                  selectedGsis={scopeItems}
+                  assumptions={assumptionRows}
                 />
               ) : (
                 <ComingSoonStep title={wizardSteps[currentStepIndex]?.title ?? ""} />

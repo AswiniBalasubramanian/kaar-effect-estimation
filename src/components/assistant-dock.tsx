@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { PaperPlaneTilt, Sparkle, X } from "@phosphor-icons/react";
+import { FileText, PaperPlaneTilt, Plus, Sparkle, X } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAssistant } from "@/lib/assistant-context";
+import { useTopBarContent } from "@/lib/top-bar-context";
 import { wizardSteps } from "@/lib/estimation-wizard";
 import { glossarySections, formulaRows } from "@/lib/glossary-data";
 
@@ -60,8 +61,12 @@ function buildAnswer(query: string): string {
 
 export function AssistantDock() {
   const { open, setOpen } = useAssistant();
+  const { crumbs } = useTopBarContent();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [pageContextEnabled, setPageContextEnabled] = useState(true);
+
+  const pageLabel = crumbs.length > 0 ? crumbs.map((c) => c.label).join(" › ") : "Home";
 
   function handleSend() {
     const query = input.trim();
@@ -98,11 +103,11 @@ export function AssistantDock() {
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Ask me about:</p>
+            <p className="font-medium text-foreground">I can help with things like:</p>
             <ul className="mt-1.5 list-disc space-y-1 pl-4">
-              <li>Any of the 5 estimation steps</li>
-              <li>Org-complexity drivers, e.g. &ldquo;Legal Entities&rdquo;</li>
-              <li>Formulas, e.g. &ldquo;org multiplier&rdquo;</li>
+              <li>Any of the five estimation steps</li>
+              <li>Org-complexity drivers, like &ldquo;Legal Entities&rdquo;</li>
+              <li>Formulas, like &ldquo;org multiplier&rdquo;</li>
               <li>Fields like &ldquo;SWT cycles&rdquo; or &ldquo;instance driver&rdquo;</li>
             </ul>
           </div>
@@ -122,8 +127,37 @@ export function AssistantDock() {
         ))}
       </div>
 
+      <div className="flex shrink-0 items-center gap-1.5 border-t border-border px-3 pt-2.5">
+        {pageContextEnabled ? (
+          <span
+            title={`I can see this page: ${pageLabel}`}
+            className="group flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-xs font-medium text-foreground"
+          >
+            <FileText className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span className="truncate">{pageLabel}</span>
+            <button
+              type="button"
+              onClick={() => setPageContextEnabled(false)}
+              aria-label="Remove this page as context"
+              className="ml-0.5 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPageContextEnabled(true)}
+            className="flex items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground"
+          >
+            <Plus className="h-3 w-3" />
+            Use this page as context
+          </button>
+        )}
+      </div>
+
       <form
-        className="flex shrink-0 items-center gap-2 border-t border-border p-3"
+        className="flex shrink-0 items-center gap-2 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           handleSend();

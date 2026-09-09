@@ -86,9 +86,11 @@ let customGsiCounter = 0;
 
 export function ScopeSelectionStep({
   onInScopeChange,
+  onSelectedItemsChange,
   selectedProducts,
 }: {
   onInScopeChange?: (count: number) => void;
+  onSelectedItemsChange?: (items: GsiCatalogItem[]) => void;
   selectedProducts?: string[];
 }) {
   const nameId = useId();
@@ -256,6 +258,10 @@ export function ScopeSelectionStep({
     onInScopeChange?.(inScope);
   }, [inScope, onInScopeChange]);
 
+  useEffect(() => {
+    onSelectedItemsChange?.(selectedItems);
+  }, [selectedItems, onSelectedItemsChange]);
+
   function defaultOverrides(item: GsiCatalogItem): SelectionOverrides {
     return {
       complexity: item.defaultComplexity,
@@ -375,7 +381,7 @@ export function ScopeSelectionStep({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-card-foreground">Scope Selection</h2>
+            <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">Scope Selection</h2>
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">
               {inScope}
             </span>
@@ -840,8 +846,24 @@ export function ScopeSelectionStep({
                                         </TableCell>
                                       )}
                                       {visibleColumns.level && (
-                                        <TableCell className="text-xs text-muted-foreground">
-                                          {item.defaultLevel}
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
+                                          <Select
+                                            value={selected[item.id]?.level ?? item.defaultLevel}
+                                            onValueChange={(v) =>
+                                              updateSelection(item, { level: v as GsiLevel })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-6 w-auto gap-1 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted data-[state=open]:border-border data-[state=open]:bg-card [&_svg]:size-3">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {gsiLevels.map((level) => (
+                                                <SelectItem key={level} value={level}>
+                                                  {level}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
                                         </TableCell>
                                       )}
                                       {visibleColumns.driver && (

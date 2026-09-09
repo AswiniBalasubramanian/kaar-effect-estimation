@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useMemo } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react";
 
@@ -12,6 +12,7 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { GsiCatalogAdmin } from "@/components/gsi-catalog-admin";
 import { PageHeader } from "@/components/page-header";
 import { useSetTopBar } from "@/lib/top-bar-context";
+import { getConfigSet } from "@/lib/config-sets-store";
 import {
   getCategory,
   gsiCatalogRows,
@@ -28,13 +29,13 @@ import {
   type PhaseTemplateRow,
 } from "@/lib/master-data";
 
-function renderBody(slug: string) {
+function renderBody(slug: string, readOnly: boolean) {
   switch (slug) {
     case "gsi-catalog":
-      return <GsiCatalogAdmin initialRows={gsiCatalogRows} />;
+      return <GsiCatalogAdmin initialRows={gsiCatalogRows} readOnly={readOnly} />;
     case "activity-effort": {
       const columns: DataTableColumn<ActivityEffortRow>[] = [
-        { key: "activity", header: "Activity", render: (r) => r.activity },
+        { key: "activity", header: "Activity", render: (r) => r.activity, getValue: (r) => r.activity },
         {
           key: "scopeLevel",
           header: "Scope Level",
@@ -62,7 +63,7 @@ function renderBody(slug: string) {
     }
     case "fricew-objects": {
       const columns: DataTableColumn<FricewObjectRow>[] = [
-        { key: "objectType", header: "Object Type", render: (r) => r.objectType },
+        { key: "objectType", header: "Object Type", render: (r) => r.objectType, getValue: (r) => r.objectType },
         {
           key: "complexity",
           header: "Complexity",
@@ -90,7 +91,7 @@ function renderBody(slug: string) {
           groupable: true,
           filterable: true,
         },
-        { key: "description", header: "Description", render: (r) => r.description },
+        { key: "description", header: "Description", render: (r) => r.description, getValue: (r) => r.description },
         {
           key: "multiplier",
           header: "Multiplier",
@@ -102,7 +103,7 @@ function renderBody(slug: string) {
     }
     case "roles": {
       const columns: DataTableColumn<RoleRow>[] = [
-        { key: "role", header: "Role", render: (r) => r.role },
+        { key: "role", header: "Role", render: (r) => r.role, getValue: (r) => r.role },
         {
           key: "distributionFactorPct",
           header: "Distribution Factor",
@@ -123,8 +124,8 @@ function renderBody(slug: string) {
           groupable: true,
           filterable: true,
         },
-        { key: "deliverable", header: "Deliverable", render: (r) => r.deliverable },
-        { key: "activity", header: "Activity", render: (r) => r.activity },
+        { key: "deliverable", header: "Deliverable", render: (r) => r.deliverable, getValue: (r) => r.deliverable },
+        { key: "activity", header: "Activity", render: (r) => r.activity, getValue: (r) => r.activity },
       ];
       return <DataTable columns={columns} rows={phaseTemplateRows} pageSize={25} />;
     }
@@ -156,13 +157,21 @@ export default function ConfigurationDetailPage({
 }) {
   const { slug } = use(params);
   const category = getCategory(slug);
+  const searchParams = useSearchParams();
+  const configSetId = searchParams.get("set");
+  const configSet = configSetId ? getConfigSet(configSetId) : undefined;
+  const isConfigSetContext = Boolean(configSetId && configSet);
+  const backHref = isConfigSetContext ? `/configuration/config-sets/${configSetId}` : "/configuration";
 
   const crumbs = useMemo(
     () => [
       { label: "Configuration", href: "/configuration" },
+      ...(isConfigSetContext && configSet
+        ? [{ label: configSet.name, href: `/configuration/config-sets/${configSetId}` }]
+        : []),
       { label: category?.title ?? "Not found" },
     ],
-    [category]
+    [category, isConfigSetContext, configSet, configSetId]
   );
   useSetTopBar(crumbs);
 
@@ -177,9 +186,9 @@ export default function ConfigurationDetailPage({
             size="icon-sm"
             variant="outline"
             className="mt-0.5 shrink-0 self-start"
-            aria-label="Back to Configuration"
+            aria-label="Back"
           >
-            <Link href="/configuration">
+            <Link href={backHref}>
               <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             </Link>
           </Button>
@@ -190,6 +199,11 @@ export default function ConfigurationDetailPage({
             <Badge variant="secondary" className="rounded-md px-2 font-medium">
               {category.rowCount.toLocaleString()} row{category.rowCount === 1 ? "" : "s"}
             </Badge>
+            {isConfigSetContext && (
+              <Badge className="rounded-md border-emerald-200 bg-emerald-50 px-1.5 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
+                Editing: {configSet?.name}
+              </Badge>
+            )}
           </span>
         }
         description={category.description}
@@ -209,7 +223,7 @@ export default function ConfigurationDetailPage({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
-          {renderBody(category.slug)}
+          {renderBody(category.slug, !isConfigSetContext)}
         </div>
       </div>
     </SidebarInset>

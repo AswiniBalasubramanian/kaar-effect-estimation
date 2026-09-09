@@ -9,7 +9,7 @@ import {
   MagnifyingGlass as Search,
   PencilSimple,
   Plus,
-  Rows as RowsIcon,
+  Stack,
 } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
@@ -184,8 +184,10 @@ function statusBadgeClass(status: GsiCatalogRow["status"]) {
 
 export function GsiCatalogAdmin({
   initialRows,
+  readOnly = false,
 }: {
   initialRows: GsiCatalogRow[];
+  readOnly?: boolean;
 }) {
   const [rows, setRows] = useState(initialRows);
   const [search, setSearch] = useState("");
@@ -405,99 +407,115 @@ export function GsiCatalogAdmin({
       <TableRow key={row.id}>
         <TableCell className="whitespace-normal">{row.l3BusinessProcess}</TableCell>
         {visibleColumns.map((col) => renderCell(row, col.key))}
-        <TableCell className="sticky right-0 z-10 border-l-2 border-border bg-background text-right shadow-[-4px_0_6px_-2px_rgb(0_0_0_/_0.08)]">
-          <div className="flex justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => toggleStatus(row.id)}>
-              {row.status === "Active" ? "Deactivate" : "Activate"}
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  onClick={() => openEdit(row)}
-                  aria-label="Edit"
-                >
-                  <PencilSimple className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">Edit</TooltipContent>
-            </Tooltip>
-          </div>
-        </TableCell>
+        {!readOnly && (
+          <TableCell className="sticky right-0 z-10 border-l-2 border-border bg-background text-right shadow-[-4px_0_6px_-2px_rgb(0_0_0_/_0.08)]">
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="outline" onClick={() => toggleStatus(row.id)}>
+                {row.status === "Active" ? "Deactivate" : "Activate"}
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    onClick={() => openEdit(row)}
+                    aria-label="Edit"
+                  >
+                    <PencilSimple className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Edit</TooltipContent>
+              </Tooltip>
+            </div>
+          </TableCell>
+        )}
       </TableRow>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "gap-1.5",
-                activeFilterCount > 0 &&
-                  "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
-              )}
-            >
-              <FunnelSimple className="h-3.5 w-3.5" />
-              Filters
-              {activeFilterCount > 0 && <ToolbarCountBadge count={activeFilterCount} />}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-64">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Filters
-              </span>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setFilters({})}
-                  className="text-xs font-medium text-primary hover:underline"
+      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+        <FunnelSimple className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        {FILTER_DEFS.map((def) => {
+          const selected = filters[def.key] ?? new Set(def.domain);
+          const isActive = selected.size > 0 && selected.size < def.domain.length;
+          return (
+            <Popover key={def.key}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "gap-1.5 rounded-full",
+                    isActive &&
+                      "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
+                  )}
                 >
-                  Reset
-                </button>
-              )}
-            </div>
-            <div className="flex max-h-72 flex-col gap-3 overflow-y-auto pr-1">
-              {FILTER_DEFS.map((def) => {
-                const selected = filters[def.key] ?? new Set(def.domain);
-                return (
-                  <div key={def.key} className="flex flex-col gap-1.5">
-                    <span className="text-xs font-medium text-foreground">{def.label}</span>
-                    <div className="flex flex-col gap-1">
-                      {def.domain.map((value) => (
-                        <label
-                          key={value}
-                          className="flex items-center gap-2 text-sm text-foreground"
-                        >
-                          <Checkbox
-                            checked={selected.has(value)}
-                            onCheckedChange={(checked) => {
-                              setFilters((prev) => {
-                                const base = prev[def.key] ?? new Set(def.domain);
-                                const next = new Set(base);
-                                if (checked) next.add(value);
-                                else next.delete(value);
-                                return { ...prev, [def.key]: next };
-                              });
-                              setPage(0);
-                            }}
-                          />
-                          {value}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
+                  {def.label}
+                  {isActive && <ToolbarCountBadge count={selected.size} />}
+                  <CaretDown className="h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-56">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {def.label}
+                  </span>
+                  {isActive && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => {
+                          const next = { ...prev };
+                          delete next[def.key];
+                          return next;
+                        })
+                      }
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+                <div className="mt-1 flex flex-col gap-1">
+                  {def.domain.map((value) => (
+                    <label
+                      key={value}
+                      className="flex items-center gap-2 text-sm text-foreground"
+                    >
+                      <Checkbox
+                        checked={selected.has(value)}
+                        onCheckedChange={(checked) => {
+                          setFilters((prev) => {
+                            const base = prev[def.key] ?? new Set(def.domain);
+                            const next = new Set(base);
+                            if (checked) next.add(value);
+                            else next.delete(value);
+                            return { ...prev, [def.key]: next };
+                          });
+                          setPage(0);
+                        }}
+                      />
+                      {value}
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          );
+        })}
+
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Filter
+        </button>
+
+        <div className="mx-1 h-4 w-px bg-border" />
 
         <Select
           value={groupBy}
@@ -512,7 +530,7 @@ export function GsiCatalogAdmin({
               isGrouped && "border-primary/40 bg-primary/5 text-primary dark:bg-primary/10"
             )}
           >
-            <RowsIcon className="h-3.5 w-3.5" />
+            <Stack className="h-3.5 w-3.5" />
             <SelectValue placeholder="Group by" />
           </SelectTrigger>
           <SelectContent>
@@ -562,7 +580,18 @@ export function GsiCatalogAdmin({
           </PopoverContent>
         </Popover>
 
-        <div className="relative min-w-[160px] flex-1">
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="shrink-0 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+        <div className="relative w-56 shrink-0">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -575,10 +604,12 @@ export function GsiCatalogAdmin({
             autoComplete="off"
           />
         </div>
-        <Button size="sm" className="gap-1.5 sm:shrink-0" onClick={openAdd}>
-          <Plus className="h-4 w-4" />
-          Add
-        </Button>
+        {!readOnly && (
+          <Button size="sm" className="gap-1.5 sm:shrink-0" onClick={openAdd}>
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -589,9 +620,11 @@ export function GsiCatalogAdmin({
               {visibleColumns.map((col) => (
                 <TableHead key={col.key}>{col.label}</TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 border-l-2 border-border bg-muted text-right shadow-[-4px_0_6px_-2px_rgb(0_0_0_/_0.08)]">
-                Actions
-              </TableHead>
+              {!readOnly && (
+                <TableHead className="sticky right-0 z-10 border-l-2 border-border bg-muted text-right shadow-[-4px_0_6px_-2px_rgb(0_0_0_/_0.08)]">
+                  Actions
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>

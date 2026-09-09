@@ -58,7 +58,7 @@ export function TopBar() {
           type="button"
           variant="secondary"
           size="sm"
-          className="gradient-border-spin gap-1.5"
+          className="gradient-border-spin gap-1.5 bg-white hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-900"
           onClick={toggle}
         >
           <Sparkle className="h-4 w-4 text-orange-500" />
