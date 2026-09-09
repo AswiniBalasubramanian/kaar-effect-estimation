@@ -5,26 +5,6 @@ import { useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-function FieldHelp({ text }: { text: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex text-muted-foreground hover:text-foreground"
-        >
-          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[10px] leading-none">
-            ?
-          </span>
-          <span className="sr-only">Help</span>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top">{text}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 interface MasterRow {
   activity: string;
@@ -93,16 +73,11 @@ function ToggleRow({
   return (
     <div className="rounded-xl border border-border bg-card px-5 py-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-sm font-semibold text-card-foreground">{title}</span>
-          <FieldHelp text={help} />
+          <span className="text-xs text-muted-foreground">{help}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
-            {enabled ? "On" : "Off (default)"}
-          </span>
-          <Switch checked={enabled} onCheckedChange={onToggle} />
-        </div>
+        <Switch checked={enabled} onCheckedChange={onToggle} className="shrink-0" />
       </div>
       {enabled && children && (
         <div className="mt-3 border-t border-border pt-3">{children}</div>
@@ -158,7 +133,7 @@ export function TestingTrainingStep({
             Already in the base estimate - Testing &amp; Data
           </h2>
           <Badge className="rounded-md border-emerald-200 bg-emerald-50 px-1.5 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
-            COUNTED PER IN-SCOPE GLOBAL SCOPE ITEM
+            Counted Per In-Scope Global Scope Item
           </Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">

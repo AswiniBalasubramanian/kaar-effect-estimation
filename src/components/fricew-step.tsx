@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { CheckCircle, Code, ProhibitInset } from "@phosphor-icons/react";
+
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fricewObjectTypes } from "@/lib/fricew-catalog";
+import { cn } from "@/lib/utils";
 
 const HOURS_PER_DAY = 8;
 
@@ -57,6 +60,7 @@ export function FricewStep({
 }: {
   onTotalsChange?: (totals: { objects: number; devHours: number }) => void;
 }) {
+  const [hasDevEffort, setHasDevEffort] = useState<boolean | null>(null);
   const [objectMode, setObjectMode] = useState(false);
   const [counts, setCounts] = useState<Counts>(emptyCounts);
 
@@ -82,50 +86,113 @@ export function FricewStep({
   const totalDevHrs = rows.reduce((sum, r) => sum + r.devHrs, 0);
 
   useEffect(() => {
-    onTotalsChange?.({ objects: totalObjects, devHours: totalDevHrs });
-  }, [totalObjects, totalDevHrs, onTotalsChange]);
+    if (hasDevEffort === false) {
+      onTotalsChange?.({ objects: 0, devHours: 0 });
+    } else {
+      onTotalsChange?.({ objects: totalObjects, devHours: totalDevHrs });
+    }
+  }, [hasDevEffort, totalObjects, totalDevHrs, onTotalsChange]);
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <h2 className="text-base font-semibold text-card-foreground">
-              FRICEW — Custom Development Objects
-            </h2>
-            <FieldHelp text="Forms, Reports, Interfaces, Conversions, Enhancements, Workflow, Fiori/Custom, and Analytics objects, sized by a Low/Medium/High man-day master." />
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Effort uses the man-day master × {HOURS_PER_DAY} hrs/day. Partial info is fine —
-            blanks count as zero.
-          </p>
-        </div>
-        <label className="flex shrink-0 items-center gap-2 rounded-md border border-input px-3 py-1.5 text-sm text-foreground">
-          <Checkbox
-            checked={objectMode}
-            onCheckedChange={(checked) => setObjectMode(checked === true)}
-          />
-          Object mode
-        </label>
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-base font-semibold text-card-foreground">
+          FRICEW — Custom Development Objects
+        </h2>
+        <FieldHelp text="Forms, Reports, Interfaces, Conversions, Enhancements, Workflow, Fiori/Custom, and Analytics objects, sized by a Low/Medium/High man-day master." />
       </div>
-
-      <p className="mt-3 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-        {objectMode ? (
-          <>
-            <span className="font-medium text-foreground">Object mode ON.</span> Development
-            effort is driven by these structured WRICEF object counts instead of per-GSI
-            Customization activities.
-          </>
-        ) : (
-          <>
-            <span className="font-medium text-foreground">Object mode OFF (per-GSI).</span>{" "}
-            Development stays inside the per-GSI Customization activities (the v18 gate mode).
-            Turn on Object mode to drive dev effort from these structured counts instead.
-          </>
-        )}
+      <p className="mt-1 text-xs text-muted-foreground">
+        Let us know whether this project has any custom development objects in scope.
       </p>
 
-      <div className="mt-4 overflow-x-auto">
+      {hasDevEffort === null ? (
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setHasDevEffort(true)}
+            className="relative rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted/50"
+          >
+            <Code className="h-5 w-5 text-muted-foreground" />
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              I have development effort
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              This project includes custom Forms, Reports, Interfaces, Conversions,
+              Enhancements, Workflow, or other WRICEF objects.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setHasDevEffort(false)}
+            className="relative rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted/50"
+          >
+            <ProhibitInset className="h-5 w-5 text-muted-foreground" />
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              I don&rsquo;t have development effort
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Skip custom object counting — no WRICEF development effort applies to this
+              project.
+            </p>
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+          <CheckCircle className="h-4 w-4 shrink-0 text-primary" weight="fill" />
+          <span className="font-medium text-foreground">
+            {hasDevEffort ? "I have development effort" : "I don't have development effort"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setHasDevEffort(null)}
+            className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
+          >
+            Change
+          </button>
+        </div>
+      )}
+
+      {hasDevEffort === true && (
+        <div className="mt-5">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Effort uses the man-day master × {HOURS_PER_DAY} hrs/day. Partial info is fine —
+              blanks count as zero.
+            </p>
+            <label className="flex shrink-0 items-center gap-2 rounded-md border border-input px-3 py-1.5 text-sm text-foreground">
+              <Checkbox
+                checked={objectMode}
+                onCheckedChange={(checked) => setObjectMode(checked === true)}
+              />
+              Object mode
+            </label>
+          </div>
+
+          <p
+            className={cn(
+              "mt-3 rounded-md px-3 py-2 text-xs",
+              objectMode
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                : "bg-muted/50 text-muted-foreground"
+            )}
+          >
+            {objectMode ? (
+              <>
+                <span className="font-medium">Object mode ON.</span> Development effort is
+                driven by these structured WRICEF object counts instead of per-GSI
+                Customization activities.
+              </>
+            ) : (
+              <>
+                <span className="font-medium text-foreground">Object mode OFF (per-GSI).</span>{" "}
+                Development stays inside the per-GSI Customization activities (the v18 gate
+                mode). Turn on Object mode to drive dev effort from these structured counts
+                instead.
+              </>
+            )}
+          </p>
+
+          <div className="mt-4 overflow-x-auto">
         <Table>
           <TableHeader className="bg-white dark:bg-gray-900">
             <TableRow className="hover:bg-transparent">
@@ -201,9 +268,11 @@ export function FricewStep({
                 {totalDevHrs}
               </TableCell>
             </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+            </TableBody>
+          </Table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

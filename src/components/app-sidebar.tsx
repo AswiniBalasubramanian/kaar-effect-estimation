@@ -60,10 +60,10 @@ export function AppSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="top-14 h-[calc(100svh-3.5rem)]"
+      className="top-12 h-[calc(100svh-3rem)]"
     >
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="pt-0">
           <SidebarGroupContent>
             <SidebarMenu>
               {navLinks.map((link) => {

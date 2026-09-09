@@ -1,10 +1,17 @@
 "use client";
 
-import { Fragment, useEffect, useId, useMemo, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import {
   ArrowsDownUp,
   CaretDown,
-  CaretLeft,
   CaretRight,
   FunnelSimple,
   MagnifyingGlass,
@@ -111,6 +118,8 @@ export function ScopeSelectionStep({
     name: true,
     cplx: true,
     level: true,
+    driver: true,
+    instances: true,
   });
   const [sortColumn, setSortColumn] = useState<"id" | "name" | "cplx" | "level" | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -126,6 +135,24 @@ export function ScopeSelectionStep({
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<GsiCatalogItem | null>(null);
+  const [editingInstancesId, setEditingInstancesId] = useState<string | null>(null);
+  const [cartWidth, setCartWidth] = useState(760);
+
+  function startCartResize(e: ReactMouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = cartWidth;
+    function onMove(moveEvent: MouseEvent) {
+      const next = startWidth - (moveEvent.clientX - startX);
+      setCartWidth(Math.min(Math.max(next, 420), 960));
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [customName, setCustomName] = useState("");
@@ -431,6 +458,8 @@ export function ScopeSelectionStep({
                         ["name", "Name"],
                         ["cplx", "Cplx"],
                         ["level", "Level"],
+                        ["driver", "Driver"],
+                        ["instances", "#Inst"],
                       ] as const
                     ).map(([key, label]) => (
                       <label
@@ -517,6 +546,25 @@ export function ScopeSelectionStep({
                 ))}
               </SelectContent>
             </Select>
+
+            {cartCollapsed && (
+              <button
+                type="button"
+                onClick={() => setCartCollapsed(false)}
+                aria-label={`Expand selected scope cart (${inScope} selected)`}
+                className="ml-auto flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground shadow-sm transition-colors hover:bg-muted/50"
+              >
+                <span className="relative">
+                  <ShoppingCartSimple className="h-4 w-4" />
+                  {inScope > 0 && (
+                    <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                      {inScope}
+                    </span>
+                  )}
+                </span>
+                Selected Scope Cart ({inScope})
+              </button>
+            )}
           </div>
 
           <div className="mt-4 max-h-96 overflow-y-auto">
@@ -620,6 +668,12 @@ export function ScopeSelectionStep({
                           />
                         </button>
                       </TableHead>
+                    )}
+                    {visibleColumns.driver && (
+                      <TableHead className="text-muted-foreground">Driver</TableHead>
+                    )}
+                    {visibleColumns.instances && (
+                      <TableHead className="text-muted-foreground">#Inst</TableHead>
                     )}
                   </TableRow>
                 </TableHeader>
@@ -790,6 +844,72 @@ export function ScopeSelectionStep({
                                           {item.defaultLevel}
                                         </TableCell>
                                       )}
+                                      {visibleColumns.driver && (
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
+                                          <Select
+                                            value={
+                                              selected[item.id]?.driver ??
+                                              item.defaultInstanceDriver
+                                            }
+                                            onValueChange={(v) =>
+                                              updateSelection(item, {
+                                                driver: v as InstanceDriver,
+                                              })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-6 w-auto gap-1 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted data-[state=open]:border-border data-[state=open]:bg-card [&_svg]:size-3">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {instanceDrivers.map((driver) => (
+                                                <SelectItem key={driver} value={driver}>
+                                                  {driver}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                      )}
+                                      {visibleColumns.instances && (
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
+                                          {editingInstancesId === item.id ? (
+                                            <Input
+                                              autoFocus
+                                              type="number"
+                                              min={1}
+                                              value={
+                                                (selected[item.id]?.instances ??
+                                                  item.instances) ??
+                                                ""
+                                              }
+                                              onChange={(e) =>
+                                                updateSelection(item, {
+                                                  instances: e.target.value
+                                                    ? Number(e.target.value)
+                                                    : undefined,
+                                                })
+                                              }
+                                              onBlur={() => setEditingInstancesId(null)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === "Escape")
+                                                  setEditingInstancesId(null);
+                                              }}
+                                              placeholder="auto"
+                                              className="h-6 w-14 px-1.5 text-[11px]"
+                                            />
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditingInstancesId(item.id)}
+                                              className="rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
+                                            >
+                                              {selected[item.id]?.instances ??
+                                                item.instances ??
+                                                "auto"}
+                                            </button>
+                                          )}
+                                        </TableCell>
+                                      )}
                                     </TableRow>
                                   ))}
                               </Fragment>
@@ -805,7 +925,7 @@ export function ScopeSelectionStep({
         </div>
 
         {detailItem ? (
-          <div className="sticky top-4 max-h-[calc(100vh-6rem)] w-full shrink-0 self-start overflow-y-auto rounded-xl border border-border bg-card px-5 py-5 lg:w-[380px]">
+          <div className="fixed top-12 right-0 bottom-0 z-30 w-full max-w-[380px] overflow-y-auto border-l border-border bg-card px-5 py-5 shadow-xl">
             <div className="flex items-start justify-between gap-2">
               <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground">
                 {detailItem.id}
@@ -890,28 +1010,17 @@ export function ScopeSelectionStep({
               {selected[detailItem.id] !== undefined ? "Remove from Scope" : "Add to Scope"}
             </Button>
           </div>
-        ) : cartCollapsed ? (
-          <button
-            type="button"
-            onClick={() => setCartCollapsed(false)}
-            aria-label={`Expand selected scope cart (${inScope} selected)`}
-            className="fixed top-1/2 right-4 z-20 flex shrink-0 -translate-y-1/2 flex-col items-center gap-3 rounded-xl border border-border bg-card px-2 py-4 text-muted-foreground shadow-sm transition-colors hover:bg-muted/50"
-          >
-            <CaretLeft className="h-4 w-4" />
-            <span className="relative mt-1">
-              <ShoppingCartSimple className="h-4 w-4" />
-              {inScope > 0 && (
-                <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                  {inScope}
-                </span>
-              )}
-            </span>
-            <span className="mt-1 text-xs font-medium whitespace-nowrap text-foreground [writing-mode:vertical-rl]">
-              Selected Scope Cart ({inScope})
-            </span>
-          </button>
-        ) : (
-        <div className="sticky top-4 max-h-[calc(100vh-6rem)] w-full shrink-0 self-start overflow-y-auto rounded-xl bg-white p-5 shadow-sm dark:bg-gray-900 lg:w-[600px]">
+        ) : cartCollapsed ? null : (
+        <div
+          style={{ "--cart-width": `${cartWidth}px` } as CSSProperties}
+          className="relative sticky top-4 max-h-[calc(100vh-6rem)] w-full shrink-0 self-start overflow-y-auto rounded-xl bg-white p-5 pl-6 shadow-sm dark:bg-gray-900 lg:w-[var(--cart-width)]"
+        >
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            onMouseDown={startCartResize}
+            className="absolute top-0 left-0 hidden h-full w-1.5 cursor-col-resize touch-none hover:bg-primary/30 lg:block"
+          />
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold text-card-foreground">
               Selected Scope Cart

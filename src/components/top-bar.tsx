@@ -16,7 +16,7 @@ export function TopBar() {
   const { toggle } = useAssistant();
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-gradient-to-l from-gray-200 via-gray-100 to-sidebar relative dark:from-gray-800 dark:via-gray-900">
+    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-gradient-to-r from-white via-white to-gray-100 relative dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <Image
         src="/kaar-pattern.svg"
         alt=""

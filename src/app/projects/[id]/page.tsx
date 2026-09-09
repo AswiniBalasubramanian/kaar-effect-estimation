@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
-  SidebarSimple,
   Check,
   Question,
   CopySimple,
   Trash,
   CaretDown,
+  CaretLeft,
+  CaretRight,
 } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
@@ -466,7 +467,11 @@ export default function ProjectDetailPage({
                   aria-label={stepsNavCollapsed ? "Expand steps" : "Collapse steps"}
                   className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <SidebarSimple className="h-3.5 w-3.5" />
+                  {stepsNavCollapsed ? (
+                    <CaretRight className="h-3.5 w-3.5" />
+                  ) : (
+                    <CaretLeft className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
               <ul className="relative flex flex-col gap-1 py-6">
@@ -791,7 +796,7 @@ export default function ProjectDetailPage({
 
                 <div className="mt-4">
                   <div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       {defaultOrgComplexityFactors.map((factor) => {
                         const meta = driverFieldMeta[factor.key];
                         const value = driverValues[factor.key] ?? "";
