@@ -464,7 +464,7 @@ export default function ProjectDetailPage({
                       className={cn(
                         "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
                         active || completed
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-gradient-to-br from-primary to-rose-600 text-primary-foreground shadow-sm"
                           : "bg-muted text-muted-foreground"
                       )}
                     >
@@ -524,18 +524,21 @@ export default function ProjectDetailPage({
               </ul>
             </nav>
 
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-gray-100 py-6 pr-3 pl-4 dark:bg-gray-900">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white py-6 pr-3 pl-4 dark:bg-gray-900">
               {activeStep === "profile-scope" ? (
                 <div className="flex flex-col gap-4">
-              <Card className="gap-0 overflow-hidden rounded-lg py-0">
-                <div className="flex items-center gap-1.5 border-b border-border bg-gradient-to-r from-background to-muted px-5 py-4">
-                  <h2 className="text-base font-semibold text-card-foreground">
-                    Customer &amp; Project Profile
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h2 className="text-base font-semibold text-foreground">
+                    Customer &amp; project profile
                   </h2>
                   <FieldHelp text="Basic customer context and delivery parameters used across every estimation step." />
                 </div>
-                <CardContent className="px-5 py-5">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Core details used throughout this estimate.
+                </p>
+                <div className="mt-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         HQ Location
@@ -663,35 +666,47 @@ export default function ProjectDetailPage({
                       Review overhead when an external PMO/audit party is involved.
                     </p>
                   </div>
+                </div>
 
-                  <div className="mt-4">
-                    <Label className="flex items-center gap-1.5 text-sm">
-                      SAP Products
-                      <FieldHelp text="SAP product family, such as S/4HANA On-Prem or S/4HANA Cloud." />
-                    </Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {sapProductOptions.map((product) => {
-                        const selected = sapProducts.has(product);
-                        return (
-                          <button
-                            key={product}
-                            type="button"
-                            onClick={() => toggleSapProduct(product)}
-                            className={cn(
-                              "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                              selected
-                                ? "border-primary bg-primary/5 text-primary"
-                                : "border-input bg-transparent text-foreground hover:bg-muted"
-                            )}
-                          >
-                            {product}
-                          </button>
-                        );
-                      })}
+                <div className="mt-5 border-t border-border pt-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="text-sm font-semibold text-foreground">
+                          SAP products
+                        </h2>
+                        <FieldHelp text="SAP product family, such as S/4HANA On-Prem or S/4HANA Cloud." />
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Choose only the products included in this engagement.
+                      </p>
                     </div>
+                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                      {sapProducts.size} selected
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {sapProductOptions.map((product) => {
+                      const selected = sapProducts.has(product);
+                      return (
+                        <button
+                          key={product}
+                          type="button"
+                          onClick={() => toggleSapProduct(product)}
+                          className={cn(
+                            "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                            selected
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-input bg-transparent text-foreground hover:bg-muted"
+                          )}
+                        >
+                          {product}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
 
               <Card className="gap-0 overflow-hidden rounded-lg py-0">
                 <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-r from-background to-muted px-5 py-4">

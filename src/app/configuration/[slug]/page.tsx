@@ -33,8 +33,22 @@ function renderBody(slug: string) {
     case "activity-effort": {
       const columns: DataTableColumn<ActivityEffortRow>[] = [
         { key: "activity", header: "Activity", render: (r) => r.activity },
-        { key: "scopeLevel", header: "Scope Level", render: (r) => r.scopeLevel },
-        { key: "complexity", header: "Complexity", render: (r) => r.complexity },
+        {
+          key: "scopeLevel",
+          header: "Scope Level",
+          render: (r) => r.scopeLevel,
+          getValue: (r) => r.scopeLevel,
+          groupable: true,
+          filterable: true,
+        },
+        {
+          key: "complexity",
+          header: "Complexity",
+          render: (r) => r.complexity,
+          getValue: (r) => r.complexity,
+          groupable: true,
+          filterable: true,
+        },
         {
           key: "baseHours",
           header: "Base Hours",
@@ -47,7 +61,14 @@ function renderBody(slug: string) {
     case "fricew-objects": {
       const columns: DataTableColumn<FricewObjectRow>[] = [
         { key: "objectType", header: "Object Type", render: (r) => r.objectType },
-        { key: "complexity", header: "Complexity", render: (r) => r.complexity },
+        {
+          key: "complexity",
+          header: "Complexity",
+          render: (r) => r.complexity,
+          getValue: (r) => r.complexity,
+          groupable: true,
+          filterable: true,
+        },
         {
           key: "effortMd",
           header: "Effort (md)",
@@ -59,7 +80,14 @@ function renderBody(slug: string) {
     }
     case "org-complexity": {
       const columns: DataTableColumn<OrgComplexityRow>[] = [
-        { key: "driver", header: "Driver", render: (r) => r.driver },
+        {
+          key: "driver",
+          header: "Driver",
+          render: (r) => r.driver,
+          getValue: (r) => r.driver,
+          groupable: true,
+          filterable: true,
+        },
         { key: "description", header: "Description", render: (r) => r.description },
         {
           key: "multiplier",
@@ -85,7 +113,14 @@ function renderBody(slug: string) {
     case "phase-template": {
       const columns: DataTableColumn<PhaseTemplateRow>[] = [
         { key: "sequence", header: "#", className: "tabular-nums", render: (r) => r.sequence },
-        { key: "phase", header: "Phase", render: (r) => r.phase },
+        {
+          key: "phase",
+          header: "Phase",
+          render: (r) => r.phase,
+          getValue: (r) => r.phase,
+          groupable: true,
+          filterable: true,
+        },
         { key: "deliverable", header: "Deliverable", render: (r) => r.deliverable },
         { key: "activity", header: "Activity", render: (r) => r.activity },
       ];

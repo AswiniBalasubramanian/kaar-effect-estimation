@@ -59,7 +59,7 @@ export default function ConfigurationPage() {
         description="Manage the org-level master data that drives every estimate — maintained centrally and applied across all your projects."
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/25">
         <div className="mx-auto w-full max-w-[1400px] px-2 pt-3 pb-6 sm:px-3 sm:pt-4 sm:pb-8">
         {!statusDismissed && (
           <div className="relative flex items-center gap-3 overflow-hidden rounded-xl border border-orange-200 bg-orange-50 px-5 py-3 dark:border-orange-900 dark:bg-orange-950/40">
