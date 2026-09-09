@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { FileText, PaperPlaneTilt, Plus, Sparkle, X } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,20 @@ export function AssistantDock() {
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">I can help with things like:</p>
+            <Image
+              src="/devtime.png"
+              alt=""
+              aria-hidden="true"
+              width={320}
+              height={320}
+              quality={100}
+              className="mx-auto h-auto w-2/3"
+            />
+            <p className="mt-2 font-medium text-foreground">I&rsquo;m your assistant for this Effort Estimator</p>
+            <p className="mt-1">
+              Ask me anything about the steps, drivers, or formulas — no need to dig through the
+              glossary. For example:
+            </p>
             <ul className="mt-1.5 list-disc space-y-1 pl-4">
               <li>Any of the five estimation steps</li>
               <li>Org-complexity drivers, like &ldquo;Legal Entities&rdquo;</li>

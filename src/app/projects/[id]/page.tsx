@@ -336,16 +336,6 @@ export default function ProjectDetailPage({
         <div className="w-full px-6 py-3">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-2">
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="outline"
-                className="mt-0.5 shrink-0"
-                aria-label="Back to Projects"
-                onClick={() => router.push("/")}
-              >
-                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-              </Button>
               <div>
                 <h1 className="text-base font-semibold tracking-tight text-pretty text-foreground sm:text-lg">
                   {project.name}
