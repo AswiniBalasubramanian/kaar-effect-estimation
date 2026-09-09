@@ -2,6 +2,8 @@
 
 import { use, useMemo } from "react";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "@phosphor-icons/react";
 
 import { SidebarInset } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
@@ -169,6 +171,19 @@ export default function ConfigurationDetailPage({
   return (
     <SidebarInset>
       <PageHeader
+        icon={
+          <Button
+            asChild
+            size="icon-sm"
+            variant="outline"
+            className="mt-0.5 shrink-0 self-start"
+            aria-label="Back to Configuration"
+          >
+            <Link href="/configuration">
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </Button>
+        }
         title={
           <span className="inline-flex items-center gap-2">
             {category.title}

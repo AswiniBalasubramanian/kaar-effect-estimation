@@ -86,7 +86,7 @@ export function FricewStep({
   }, [totalObjects, totalDevHrs, onTotalsChange]);
 
   return (
-    <div className="rounded-xl border border-border bg-card px-5 py-5">
+    <div>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
@@ -125,17 +125,17 @@ export function FricewStep({
         )}
       </p>
 
-      <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+      <div className="mt-4 overflow-x-auto">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Skill</TableHead>
-              <TableHead>Low</TableHead>
-              <TableHead>Medium</TableHead>
-              <TableHead>High</TableHead>
-              <TableHead className="text-right">Objects</TableHead>
-              <TableHead className="text-right">Dev Hrs</TableHead>
+          <TableHeader className="bg-white dark:bg-gray-900">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-muted-foreground">Type</TableHead>
+              <TableHead className="text-muted-foreground">Skill</TableHead>
+              <TableHead className="text-muted-foreground">Low</TableHead>
+              <TableHead className="text-muted-foreground">Medium</TableHead>
+              <TableHead className="text-muted-foreground">High</TableHead>
+              <TableHead className="text-right text-muted-foreground">Objects</TableHead>
+              <TableHead className="text-right text-muted-foreground">Dev Hrs</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -204,37 +204,6 @@ export function FricewStep({
           </TableBody>
         </Table>
       </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-background px-4 py-3">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            WRICEF Objects
-          </p>
-          <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-            {totalObjects}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-background px-4 py-3">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Est. Dev Hours
-          </p>
-          <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-            {totalDevHrs}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-background px-4 py-3">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Mode
-          </p>
-          <p className="mt-1 text-sm font-semibold text-foreground">
-            {objectMode ? "Object" : "Per-GSI"}
-          </p>
-        </div>
-      </div>
-
-      <p className="mt-4 text-xs text-muted-foreground">
-        Recompute in Step E to fold these into the estimate.
-      </p>
     </div>
   );
 }

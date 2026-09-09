@@ -1,7 +1,19 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
-import { CaretDown, CaretRight, MagnifyingGlass, Plus, X } from "@phosphor-icons/react";
+import { Fragment, useEffect, useId, useMemo, useState } from "react";
+import {
+  ArrowsDownUp,
+  CaretDown,
+  CaretLeft,
+  CaretRight,
+  FunnelSimple,
+  MagnifyingGlass,
+  Plus,
+  ShoppingCartSimple,
+  Sliders,
+  Stack,
+  X,
+} from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +27,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,7 +47,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   gsiCatalog,
@@ -36,25 +60,6 @@ import {
   type SapProduct,
 } from "@/lib/gsi-catalog";
 
-function FieldHelp({ text }: { text: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex text-muted-foreground hover:text-foreground"
-        >
-          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[10px] leading-none">
-            ?
-          </span>
-          <span className="sr-only">Help</span>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top">{text}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 function complexityBadgeClass(level: GsiComplexity) {
   if (level === "H")
     return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-400";
@@ -63,15 +68,11 @@ function complexityBadgeClass(level: GsiComplexity) {
   return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400";
 }
 
-function StatBox({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-background px-4 py-3">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">{value}</p>
-    </div>
-  );
+interface SelectionOverrides {
+  complexity: GsiComplexity;
+  level: GsiLevel;
+  driver: InstanceDriver;
+  instances?: number;
 }
 
 let customGsiCounter = 0;
@@ -86,7 +87,7 @@ export function ScopeSelectionStep({
   const nameId = useId();
 
   const [customItems, setCustomItems] = useState<GsiCatalogItem[]>([]);
-  const [selected, setSelected] = useState<Record<string, GsiComplexity>>({});
+  const [selected, setSelected] = useState<Record<string, SelectionOverrides>>({});
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const visibleProducts = useMemo(
@@ -98,13 +99,33 @@ export function ScopeSelectionStep({
   );
 
   const [activeProduct, setActiveProduct] = useState<SapProduct>("S4H_OnPrem");
+  const [cartCollapsed, setCartCollapsed] = useState(true);
 
   if (!visibleProducts.includes(activeProduct) && visibleProducts.length > 0) {
     setActiveProduct(visibleProducts[0]);
   }
   const [businessAreaFilter, setBusinessAreaFilter] = useState("all");
   const [processGroupFilter, setProcessGroupFilter] = useState("all");
+  const [visibleColumns, setVisibleColumns] = useState({
+    id: true,
+    name: true,
+    cplx: true,
+    level: true,
+  });
+  const [sortColumn, setSortColumn] = useState<"id" | "name" | "cplx" | "level" | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  function toggleSort(column: "id" | "name" | "cplx" | "level") {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  }
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<GsiCatalogItem | null>(null);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [customName, setCustomName] = useState("");
@@ -152,42 +173,70 @@ export function ScopeSelectionStep({
     });
   }, [activeProduct, businessAreaFilter, processGroupFilter, search]);
 
+  const sortedFilteredCatalog = useMemo(() => {
+    function columnValue(item: GsiCatalogItem) {
+      switch (sortColumn) {
+        case "name":
+          return item.title;
+        case "cplx":
+          return item.defaultComplexity;
+        case "level":
+          return item.defaultLevel;
+        default:
+          return item.id;
+      }
+    }
+    return [...filteredCatalog].sort((a, b) => {
+      if (a.businessArea !== b.businessArea) return a.businessArea.localeCompare(b.businessArea);
+      if (a.processGroup !== b.processGroup) return a.processGroup.localeCompare(b.processGroup);
+      const cmp = columnValue(a).localeCompare(columnValue(b));
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+  }, [filteredCatalog, sortColumn, sortDirection]);
+
   const groupedCatalog = useMemo(() => {
     const areas = new Map<string, Map<string, GsiCatalogItem[]>>();
-    for (const item of filteredCatalog) {
+    for (const item of sortedFilteredCatalog) {
       if (!areas.has(item.businessArea)) areas.set(item.businessArea, new Map());
       const groups = areas.get(item.businessArea)!;
       if (!groups.has(item.processGroup)) groups.set(item.processGroup, []);
       groups.get(item.processGroup)!.push(item);
     }
     return areas;
-  }, [filteredCatalog]);
+  }, [sortedFilteredCatalog]);
 
   const selectedItems = useMemo(
     () => allItems.filter((item) => selected[item.id] !== undefined),
     [allItems, selected]
   );
 
+  const selectedByProductThenArea = useMemo(() => {
+    const products = new Map<string, Map<string, GsiCatalogItem[]>>();
+    for (const item of selectedItems) {
+      if (!products.has(item.product)) products.set(item.product, new Map());
+      const areas = products.get(item.product)!;
+      if (!areas.has(item.businessArea)) areas.set(item.businessArea, []);
+      areas.get(item.businessArea)!.push(item);
+    }
+    return products;
+  }, [selectedItems]);
+
+  const visibleColumnCount = 1 + Object.values(visibleColumns).filter(Boolean).length;
+
   const inScope = selectedItems.length;
-  const high = selectedItems.filter((i) => selected[i.id] === "H").length;
-  const medium = selectedItems.filter((i) => selected[i.id] === "M").length;
-  const low = selectedItems.filter((i) => selected[i.id] === "L").length;
-  const custom = customItems.filter((i) => selected[i.id] !== undefined).length;
-  const autoDefaulted = selectedItems.filter(
-    (i) => !customItems.includes(i) && selected[i.id] === i.defaultComplexity
-  ).length;
 
   useEffect(() => {
     onInScopeChange?.(inScope);
   }, [inScope, onInScopeChange]);
 
-  const selectedAreaChips = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const item of selectedItems) {
-      counts.set(item.businessArea, (counts.get(item.businessArea) ?? 0) + 1);
-    }
-    return Array.from(counts.entries());
-  }, [selectedItems]);
+  function defaultOverrides(item: GsiCatalogItem): SelectionOverrides {
+    return {
+      complexity: item.defaultComplexity,
+      level: item.defaultLevel,
+      driver: item.defaultInstanceDriver,
+      instances: item.instances,
+    };
+  }
 
   function toggleItem(item: GsiCatalogItem) {
     setSelected((prev) => {
@@ -195,20 +244,35 @@ export function ScopeSelectionStep({
       if (next[item.id] !== undefined) {
         delete next[item.id];
       } else {
-        next[item.id] = item.defaultComplexity;
+        next[item.id] = defaultOverrides(item);
       }
       return next;
     });
   }
 
-  function setItemComplexity(id: string, complexity: GsiComplexity) {
-    setSelected((prev) => ({ ...prev, [id]: complexity }));
+  function updateSelection(item: GsiCatalogItem, patch: Partial<SelectionOverrides>) {
+    setSelected((prev) => ({
+      ...prev,
+      [item.id]: { ...(prev[item.id] ?? defaultOverrides(item)), ...patch },
+    }));
   }
 
   function removeItem(id: string) {
     setSelected((prev) => {
       const next = { ...prev };
       delete next[id];
+      return next;
+    });
+  }
+
+  function toggleAllFiltered() {
+    const allSelected = sortedFilteredCatalog.every((i) => selected[i.id] !== undefined);
+    setSelected((prev) => {
+      const next = { ...prev };
+      for (const item of sortedFilteredCatalog) {
+        if (allSelected) delete next[item.id];
+        else next[item.id] = defaultOverrides(item);
+      }
       return next;
     });
   }
@@ -222,16 +286,28 @@ export function ScopeSelectionStep({
     });
   }
 
-  function toggleArea(area: string, items: GsiCatalogItem[]) {
+  function toggleItems(items: GsiCatalogItem[]) {
     const allSelected = items.every((i) => selected[i.id] !== undefined);
     setSelected((prev) => {
       const next = { ...prev };
       for (const item of items) {
         if (allSelected) delete next[item.id];
-        else next[item.id] = item.defaultComplexity;
+        else next[item.id] = defaultOverrides(item);
       }
       return next;
     });
+  }
+
+  function toggleExpandAll() {
+    const allKeys: string[] = [];
+    for (const [area, groups] of groupedCatalog.entries()) {
+      allKeys.push(`area:${area}`);
+      for (const group of groups.keys()) {
+        allKeys.push(`group:${area}:${group}`);
+      }
+    }
+    const allCollapsed = allKeys.length > 0 && allKeys.every((key) => expandedGroups.has(key));
+    setExpandedGroups(allCollapsed ? new Set() : new Set(allKeys));
   }
 
   function resetCustomGsiForm() {
@@ -262,93 +338,153 @@ export function ScopeSelectionStep({
       stdHrs: customStdHrs ? Number(customStdHrs) : undefined,
     };
     setCustomItems((prev) => [...prev, item]);
-    setSelected((prev) => ({ ...prev, [id]: customComplexity }));
+    setSelected((prev) => ({ ...prev, [id]: defaultOverrides(item) }));
     resetCustomGsiForm();
     setAddDialogOpen(false);
   }
 
-  const selectedByProductThenArea = useMemo(() => {
-    const products = new Map<string, Map<string, GsiCatalogItem[]>>();
-    for (const item of selectedItems) {
-      if (!products.has(item.product)) products.set(item.product, new Map());
-      const areas = products.get(item.product)!;
-      if (!areas.has(item.businessArea)) areas.set(item.businessArea, []);
-      areas.get(item.businessArea)!.push(item);
-    }
-    return products;
-  }, [selectedItems]);
-
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-border bg-card px-5 py-5">
-        <div className="flex items-center gap-1.5">
-          <h2 className="text-base font-semibold text-card-foreground">Scope Summary</h2>
-          <FieldHelp text="In-scope Global Scope Items selected from the GSI catalog, grouped by complexity." />
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
-          <StatBox label="In Scope" value={inScope} />
-          <StatBox label="High" value={high} />
-          <StatBox label="Medium" value={medium} />
-          <StatBox label="Low" value={low} />
-          <StatBox label="Custom" value={custom} />
-          <StatBox label="Auto-Defaulted" value={autoDefaulted} />
-        </div>
-        {selectedAreaChips.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {selectedAreaChips.map(([area, count]) => (
-              <span
-                key={area}
-                className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground"
-              >
-                {area} {count}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card px-5 py-5 lg:col-span-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-card-foreground">GSI Catalog Browser</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Browse by product and business area, then add individual scope items or a
-                visible set.
-              </p>
-            </div>
-            <Button type="button" size="sm" className="gap-1.5" onClick={() => setAddDialogOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Custom GSI
-            </Button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {visibleProducts.map((product) => (
-              <button
-                key={product}
-                type="button"
-                onClick={() => {
-                  setActiveProduct(product);
-                  setBusinessAreaFilter("all");
-                  setProcessGroupFilter("all");
-                }}
-                className={cn(
-                  "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                  activeProduct === product
-                    ? "border-primary text-primary"
-                    : "border-input bg-transparent text-foreground hover:bg-muted"
-                )}
-              >
-                {product}
-              </button>
-            ))}
-            <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-              {filteredCatalog.length} matches
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-card-foreground">Scope Selection</h2>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">
+              {inScope}
             </span>
           </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Browse by product and business area, then add individual scope items or a visible
+            set.
+          </p>
 
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {visibleProducts.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-b border-border pb-3">
+              <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+                {visibleProducts.map((product) => (
+                  <button
+                    key={product}
+                    type="button"
+                    onClick={() => setActiveProduct(product)}
+                    className={cn(
+                      "rounded-md px-3 py-1 text-sm font-medium transition-colors",
+                      product === activeProduct
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {product}
+                  </button>
+                ))}
+              </div>
+
+              <div className="ml-auto flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Filter"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <FunnelSimple className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Sort"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <ArrowsDownUp className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Group"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Stack className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Search"
+                  onClick={() => setSearchOpen((v) => !v)}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+                    searchOpen && "bg-muted text-foreground"
+                  )}
+                >
+                  <MagnifyingGlass className="h-4 w-4" />
+                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Customize columns"
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Sliders className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-48">
+                    <p className="px-1 text-xs font-medium text-muted-foreground">
+                      Visible columns
+                    </p>
+                    {(
+                      [
+                        ["id", "ID"],
+                        ["name", "Name"],
+                        ["cplx", "Cplx"],
+                        ["level", "Level"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label
+                        key={key}
+                        className="flex items-center gap-2 rounded-md px-1 py-1.5 text-sm text-foreground hover:bg-muted"
+                      >
+                        <Checkbox
+                          checked={visibleColumns[key]}
+                          onCheckedChange={(checked) =>
+                            setVisibleColumns((prev) => ({ ...prev, [key]: checked === true }))
+                          }
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+                {searchOpen && (
+                  <div className="relative">
+                    <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      autoFocus
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search process, scope item ID, module, group, or keyword"
+                      className={cn("h-8 w-64 rounded-full pl-9", search && "pr-8")}
+                      autoComplete="off"
+                    />
+                    {search && (
+                      <button
+                        type="button"
+                        onClick={() => setSearch("")}
+                        aria-label="Clear search"
+                        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setAddDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Custom GSI
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <Select
               value={businessAreaFilter}
               onValueChange={(v) => {
@@ -356,7 +492,7 @@ export function ScopeSelectionStep({
                 setProcessGroupFilter("all");
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-8 w-auto rounded-full border-input bg-transparent px-3 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -369,7 +505,7 @@ export function ScopeSelectionStep({
               </SelectContent>
             </Select>
             <Select value={processGroupFilter} onValueChange={setProcessGroupFilter}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-8 w-auto rounded-full border-input bg-transparent px-3 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -383,245 +519,597 @@ export function ScopeSelectionStep({
             </Select>
           </div>
 
-          <div className="relative mt-2">
-            <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search process, scope item ID, module, group, or keyword"
-              className="pl-9"
-              autoComplete="off"
-            />
-          </div>
-
-          <div className="mt-3 max-h-96 overflow-y-auto rounded-lg border border-border">
+          <div className="mt-4 max-h-96 overflow-y-auto">
             {groupedCatalog.size === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-muted-foreground">
                 No scope items match this filter.
               </p>
             ) : (
-              Array.from(groupedCatalog.entries()).map(([area, groups]) => {
-                const areaItems = Array.from(groups.values()).flat();
-                const areaSelectedCount = areaItems.filter(
-                  (i) => selected[i.id] !== undefined
-                ).length;
-                const areaKey = `area:${area}`;
-                const areaExpanded = !expandedGroups.has(areaKey);
-                return (
-                  <div key={area} className="border-b border-border last:border-b-0">
-                    <div className="flex items-center gap-2 bg-muted/50 px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup(areaKey)}
-                        className="flex items-center gap-1.5 text-left"
-                      >
-                        {areaExpanded ? (
-                          <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
-                        ) : (
-                          <CaretRight className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                        <span className="text-sm font-medium text-foreground">{area}</span>
-                      </button>
-                      <span className="text-xs text-muted-foreground">
-                        {areaItems.length} GSIs | {areaSelectedCount} selected
-                      </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="ml-auto h-7"
-                        onClick={() => toggleArea(area, areaItems)}
-                      >
-                        {areaSelectedCount === areaItems.length ? "Remove area" : "Add area"}
-                      </Button>
-                    </div>
-
-                    {areaExpanded &&
-                      Array.from(groups.entries()).map(([group, items]) => {
-                        const groupSelectedCount = items.filter(
-                          (i) => selected[i.id] !== undefined
-                        ).length;
-                        const groupKey = `group:${area}:${group}`;
-                        const groupExpanded = !expandedGroups.has(groupKey);
-                        return (
-                          <div key={group}>
-                            <div className="flex items-center gap-2 px-3 py-2 pl-8">
+              <Table containerClassName="overflow-x-visible">
+                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-16">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={toggleExpandAll}
+                          aria-label="Expand or collapse all groups"
+                          className="flex items-center text-muted-foreground hover:text-foreground"
+                        >
+                          {Array.from(groupedCatalog.entries()).every(([area, groups]) =>
+                            [`area:${area}`, ...Array.from(groups.keys()).map((g) => `group:${area}:${g}`)].every(
+                              (key) => expandedGroups.has(key)
+                            )
+                          ) ? (
+                            <CaretRight className="h-3.5 w-3.5" />
+                          ) : (
+                            <CaretDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <Checkbox
+                          checked={sortedFilteredCatalog.every((i) => selected[i.id] !== undefined)}
+                          onCheckedChange={() => toggleAllFiltered()}
+                          aria-label="Select all filtered GSIs"
+                        />
+                      </div>
+                    </TableHead>
+                    {visibleColumns.id && (
+                      <TableHead className="group text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("id")}
+                          className="flex items-center gap-1 hover:text-foreground"
+                        >
+                          ID
+                          <ArrowsDownUp
+                            className={cn(
+                              "h-3 w-3 opacity-0 group-hover:opacity-100",
+                              sortColumn === "id" && "opacity-100"
+                            )}
+                          />
+                        </button>
+                      </TableHead>
+                    )}
+                    {visibleColumns.name && (
+                      <TableHead className="group text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("name")}
+                          className="flex items-center gap-1 hover:text-foreground"
+                        >
+                          Name
+                          <ArrowsDownUp
+                            className={cn(
+                              "h-3 w-3 opacity-0 group-hover:opacity-100",
+                              sortColumn === "name" && "opacity-100"
+                            )}
+                          />
+                        </button>
+                      </TableHead>
+                    )}
+                    {visibleColumns.cplx && (
+                      <TableHead className="group text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("cplx")}
+                          className="flex items-center gap-1 hover:text-foreground"
+                        >
+                          Cplx
+                          <ArrowsDownUp
+                            className={cn(
+                              "h-3 w-3 opacity-0 group-hover:opacity-100",
+                              sortColumn === "cplx" && "opacity-100"
+                            )}
+                          />
+                        </button>
+                      </TableHead>
+                    )}
+                    {visibleColumns.level && (
+                      <TableHead className="group text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("level")}
+                          className="flex items-center gap-1 hover:text-foreground"
+                        >
+                          Level
+                          <ArrowsDownUp
+                            className={cn(
+                              "h-3 w-3 opacity-0 group-hover:opacity-100",
+                              sortColumn === "level" && "opacity-100"
+                            )}
+                          />
+                        </button>
+                      </TableHead>
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(groupedCatalog.entries()).map(([area, groups]) => {
+                    const areaItems = Array.from(groups.values()).flat();
+                    const areaSelectedCount = areaItems.filter(
+                      (i) => selected[i.id] !== undefined
+                    ).length;
+                    const areaKey = `area:${area}`;
+                    const areaExpanded = !expandedGroups.has(areaKey);
+                    return (
+                      <Fragment key={area}>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableCell colSpan={visibleColumnCount} className="py-2">
+                            <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => toggleGroup(groupKey)}
-                                className="flex items-center gap-1.5 text-left"
+                                onClick={() => toggleGroup(areaKey)}
+                                className="flex items-center"
+                                aria-label={areaExpanded ? `Collapse ${area}` : `Expand ${area}`}
                               >
-                                {groupExpanded ? (
+                                {areaExpanded ? (
                                   <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
                                 ) : (
                                   <CaretRight className="h-3.5 w-3.5 text-muted-foreground" />
                                 )}
-                                <span className="text-sm text-foreground">{group}</span>
                               </button>
-                              <span className="text-xs text-muted-foreground">
-                                {items.length} GSIs | {groupSelectedCount} selected
-                              </span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="ml-auto h-7"
-                                onClick={() => toggleArea(group, items)}
+                              <Checkbox
+                                checked={areaSelectedCount === areaItems.length}
+                                onCheckedChange={() => toggleItems(areaItems)}
+                                aria-label={`Select all in ${area}`}
+                              />
+                              <span
+                                className="cursor-pointer text-sm font-medium text-foreground"
+                                onClick={() => toggleGroup(areaKey)}
                               >
-                                {groupSelectedCount === items.length ? "Remove group" : "Add group"}
-                              </Button>
+                                {area}
+                              </span>
+                              <span className="ml-auto text-xs text-muted-foreground">
+                                {areaItems.length} GSIs | {areaSelectedCount} selected
+                              </span>
                             </div>
+                          </TableCell>
+                        </TableRow>
 
-                            {groupExpanded &&
-                              items.map((item) => (
-                                <label
-                                  key={item.id}
-                                  className="flex cursor-pointer items-center gap-2.5 px-3 py-2 pl-12 hover:bg-muted"
-                                >
-                                  <Checkbox
-                                    checked={selected[item.id] !== undefined}
-                                    onCheckedChange={() => toggleItem(item)}
-                                  />
-                                  <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground">
-                                    {item.id}
-                                  </span>
-                                  <span
-                                    className={cn(
-                                      "rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
-                                      complexityBadgeClass(item.defaultComplexity)
-                                    )}
-                                  >
-                                    {item.defaultComplexity}
-                                  </span>
-                                  <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                                    {item.defaultLevel}
-                                  </span>
-                                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                                    {item.title}
-                                  </span>
-                                </label>
-                              ))}
-                          </div>
-                        );
-                      })}
-                  </div>
-                );
-              })
+                        {areaExpanded &&
+                          Array.from(groups.entries()).map(([group, items]) => {
+                            const groupSelectedCount = items.filter(
+                              (i) => selected[i.id] !== undefined
+                            ).length;
+                            const groupKey = `group:${area}:${group}`;
+                            const groupExpanded = !expandedGroups.has(groupKey);
+                            return (
+                              <Fragment key={group}>
+                                <TableRow className="hover:bg-transparent">
+                                  <TableCell colSpan={visibleColumnCount} className="py-2 pl-8">
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleGroup(groupKey)}
+                                        className="flex items-center"
+                                        aria-label={
+                                          groupExpanded ? `Collapse ${group}` : `Expand ${group}`
+                                        }
+                                      >
+                                        {groupExpanded ? (
+                                          <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                        ) : (
+                                          <CaretRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                        )}
+                                      </button>
+                                      <Checkbox
+                                        checked={groupSelectedCount === items.length}
+                                        onCheckedChange={() => toggleItems(items)}
+                                        aria-label={`Select all in ${group}`}
+                                      />
+                                      <span
+                                        className="cursor-pointer text-sm text-foreground"
+                                        onClick={() => toggleGroup(groupKey)}
+                                      >
+                                        {group}
+                                      </span>
+                                      <span className="ml-auto text-xs text-muted-foreground">
+                                        {items.length} GSIs | {groupSelectedCount} selected
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+
+                                {groupExpanded &&
+                                  items.map((item) => (
+                                    <TableRow
+                                      key={item.id}
+                                      className="group cursor-pointer divide-x divide-border data-[state=selected]:bg-orange-50/50! data-[state=selected]:hover:bg-orange-50/50! dark:data-[state=selected]:bg-orange-950/15! dark:data-[state=selected]:hover:bg-orange-950/15!"
+                                      onClick={() => toggleItem(item)}
+                                      data-state={
+                                        selected[item.id] !== undefined ? "selected" : undefined
+                                      }
+                                    >
+                                      <TableCell
+                                        className="pl-16"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Checkbox
+                                          checked={selected[item.id] !== undefined}
+                                          onCheckedChange={() => toggleItem(item)}
+                                        />
+                                      </TableCell>
+                                      {visibleColumns.id && (
+                                        <TableCell className="border-l-0">
+                                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                            {item.id}
+                                          </span>
+                                        </TableCell>
+                                      )}
+                                      {visibleColumns.name && (
+                                        <TableCell className="max-w-[220px] truncate text-sm text-foreground">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <span className="truncate">{item.title}</span>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDetailItem(item);
+                                              }}
+                                              className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                                            >
+                                              Details
+                                            </button>
+                                          </div>
+                                        </TableCell>
+                                      )}
+                                      {visibleColumns.cplx && (
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
+                                          <Select
+                                            value={
+                                              selected[item.id]?.complexity ??
+                                              item.defaultComplexity
+                                            }
+                                            onValueChange={(v) =>
+                                              updateSelection(item, {
+                                                complexity: v as GsiComplexity,
+                                              })
+                                            }
+                                          >
+                                            <SelectTrigger
+                                              className={cn(
+                                                "h-6 w-auto gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium [&_svg]:size-3",
+                                                complexityBadgeClass(
+                                                  selected[item.id]?.complexity ??
+                                                    item.defaultComplexity
+                                                )
+                                              )}
+                                            >
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="L">L</SelectItem>
+                                              <SelectItem value="M">M</SelectItem>
+                                              <SelectItem value="H">H</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                      )}
+                                      {visibleColumns.level && (
+                                        <TableCell className="text-xs text-muted-foreground">
+                                          {item.defaultLevel}
+                                        </TableCell>
+                                      )}
+                                    </TableRow>
+                                  ))}
+                              </Fragment>
+                            );
+                          })}
+                      </Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card px-5 py-5">
-          <h2 className="text-base font-semibold text-card-foreground">
-            Selected Scope Cart ({inScope})
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Review the values that will be saved and used by the estimate.
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Complexity is a per-project judgment.</span>{" "}
-            Each GSI is pre-filled with the catalog&rsquo;s suggested default, but you set the
-            complexity that applies to <span className="italic">this</span> project here.
-          </p>
-          <p className="mt-2 rounded-md bg-muted/50 px-2.5 py-2 text-xs text-muted-foreground">
-            Instance drivers read Step A values. LegalEntities repeats once per legal entity,
-            Countries repeats once per country, and Fixed1 means exactly one instance.
+        {detailItem ? (
+          <div className="sticky top-4 max-h-[calc(100vh-6rem)] w-full shrink-0 self-start overflow-y-auto rounded-xl border border-border bg-card px-5 py-5 lg:w-[380px]">
+            <div className="flex items-start justify-between gap-2">
+              <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-semibold text-primary-foreground">
+                {detailItem.id}
+              </span>
+              <button
+                type="button"
+                onClick={() => setDetailItem(null)}
+                aria-label="Close details"
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <h2 className="mt-2 text-base font-semibold text-card-foreground">
+              {detailItem.title}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {detailItem.businessArea} / {detailItem.processGroup}
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Product
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{detailItem.product}</p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Process ID
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{detailItem.id}</p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Default Cplx
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {detailItem.defaultComplexity}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Default Level
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {detailItem.defaultLevel}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Inst. Driver
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {detailItem.defaultInstanceDriver}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Derived Inst.
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {detailItem.instances ?? 1}
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-3 rounded-md bg-muted/50 px-2.5 py-2 text-xs text-muted-foreground">
+              Catalog defaults are starting points. After adding this item, you can still adjust
+              complexity, level, instance driver, and instances in the Selected Scope Cart before
+              saving.
+            </p>
+
+            <Button
+              type="button"
+              className="mt-4 w-full"
+              onClick={() => {
+                toggleItem(detailItem);
+                setDetailItem(null);
+              }}
+            >
+              {selected[detailItem.id] !== undefined ? "Remove from Scope" : "Add to Scope"}
+            </Button>
+          </div>
+        ) : cartCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setCartCollapsed(false)}
+            aria-label={`Expand selected scope cart (${inScope} selected)`}
+            className="fixed top-1/2 right-4 z-20 flex shrink-0 -translate-y-1/2 flex-col items-center gap-3 rounded-xl border border-border bg-card px-2 py-4 text-muted-foreground shadow-sm transition-colors hover:bg-muted/50"
+          >
+            <CaretLeft className="h-4 w-4" />
+            <span className="relative mt-1">
+              <ShoppingCartSimple className="h-4 w-4" />
+              {inScope > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                  {inScope}
+                </span>
+              )}
+            </span>
+            <span className="mt-1 text-xs font-medium whitespace-nowrap text-foreground [writing-mode:vertical-rl]">
+              Selected Scope Cart ({inScope})
+            </span>
+          </button>
+        ) : (
+        <div className="sticky top-4 max-h-[calc(100vh-6rem)] w-full shrink-0 self-start overflow-y-auto rounded-xl bg-white p-5 shadow-sm dark:bg-gray-900 lg:w-[600px]">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-card-foreground">
+              Selected Scope Cart
+            </h2>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">
+              {inScope}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCartCollapsed(true)}
+              aria-label="Collapse selected scope cart"
+              className="ml-auto shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <CaretRight className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Review and adjust the complexity that applies to this project before saving.
           </p>
 
           {selectedByProductThenArea.size === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">No scope items selected yet.</p>
           ) : (
-            <div className="mt-3 flex flex-col gap-3">
-              {Array.from(selectedByProductThenArea.entries()).map(([product, areas]) => {
-                const productKey = `cart-product:${product}`;
-                const productExpanded = !expandedGroups.has(productKey);
-                const productCount = Array.from(areas.values()).flat().length;
-                return (
-                  <div key={product} className="rounded-lg border border-border">
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(productKey)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left"
-                    >
-                      {productExpanded ? (
-                        <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
-                      ) : (
-                        <CaretRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      )}
-                      <span className="text-sm font-semibold text-foreground">{product}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {productCount} selected GSIs
-                      </span>
-                    </button>
-
-                    {productExpanded &&
-                      Array.from(areas.entries()).map(([area, items]) => {
-                        const areaKey = `cart-area:${product}:${area}`;
-                        const areaExpanded = !expandedGroups.has(areaKey);
-                        return (
-                          <div key={area} className="border-t border-border">
+            <div className="mt-4">
+              <Table containerClassName="overflow-x-visible">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-muted-foreground">Name</TableHead>
+                    <TableHead className="text-muted-foreground">Cplx</TableHead>
+                    <TableHead className="text-muted-foreground">Lvl</TableHead>
+                    <TableHead className="text-muted-foreground">Driver</TableHead>
+                    <TableHead className="text-muted-foreground">#Inst</TableHead>
+                    <TableHead className="w-8" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(selectedByProductThenArea.entries()).map(([product, areas]) => {
+                    const productKey = `cart-product:${product}`;
+                    const productExpanded = !expandedGroups.has(productKey);
+                    const productCount = Array.from(areas.values()).flat().length;
+                    return (
+                      <Fragment key={product}>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableCell colSpan={6} className="py-2">
                             <button
                               type="button"
-                              onClick={() => toggleGroup(areaKey)}
-                              className="flex w-full items-center gap-2 px-3 py-2 pl-6 text-left"
+                              onClick={() => toggleGroup(productKey)}
+                              className="flex w-full items-center gap-2 text-left"
                             >
-                              {areaExpanded ? (
+                              {productExpanded ? (
                                 <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
                               ) : (
                                 <CaretRight className="h-3.5 w-3.5 text-muted-foreground" />
                               )}
-                              <span className="text-sm text-foreground">{area}</span>
+                              <span className="text-sm font-semibold text-foreground">
+                                {product}
+                              </span>
                               <span className="ml-auto text-xs text-muted-foreground">
-                                {items.length} selected GSIs
+                                {productCount} selected GSIs
                               </span>
                             </button>
+                          </TableCell>
+                        </TableRow>
 
-                            {areaExpanded && (
-                              <div className="flex flex-col gap-2 px-3 pb-3 pl-6">
-                                {items.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="flex items-center gap-2 rounded-md border border-border px-2.5 py-2"
-                                  >
-                                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                                      {item.title}
-                                    </span>
-                                    <Select
-                                      value={selected[item.id]}
-                                      onValueChange={(v) =>
-                                        setItemComplexity(item.id, v as GsiComplexity)
-                                      }
-                                    >
-                                      <SelectTrigger className="h-7 w-24 shrink-0">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="L">Low</SelectItem>
-                                        <SelectItem value="M">Medium</SelectItem>
-                                        <SelectItem value="H">High</SelectItem>
-                                      </SelectContent>
-                                    </Select>
+                        {productExpanded &&
+                          Array.from(areas.entries()).map(([area, items]) => {
+                            const areaKey = `cart-area:${product}:${area}`;
+                            const areaExpanded = !expandedGroups.has(areaKey);
+                            return (
+                              <Fragment key={area}>
+                                <TableRow className="hover:bg-transparent">
+                                  <TableCell colSpan={6} className="py-2 pl-8">
                                     <button
                                       type="button"
-                                      onClick={() => removeItem(item.id)}
-                                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                                      onClick={() => toggleGroup(areaKey)}
+                                      className="flex w-full items-center gap-2 text-left"
                                     >
-                                      <X className="h-4 w-4" />
-                                      <span className="sr-only">Remove {item.title}</span>
+                                      {areaExpanded ? (
+                                        <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                      ) : (
+                                        <CaretRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                      )}
+                                      <span className="text-sm text-foreground">{area}</span>
+                                      <span className="ml-auto text-xs text-muted-foreground">
+                                        {items.length} selected GSIs
+                                      </span>
                                     </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                  </div>
-                );
-              })}
+                                  </TableCell>
+                                </TableRow>
+
+                                {areaExpanded &&
+                                  items.map((item) => {
+                                    const overrides = selected[item.id] ?? defaultOverrides(item);
+                                    return (
+                                      <TableRow key={item.id}>
+                                        <TableCell className="max-w-[140px] truncate pl-12 text-sm text-foreground">
+                                          {item.title}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Select
+                                            value={overrides.complexity}
+                                            onValueChange={(v) =>
+                                              updateSelection(item, {
+                                                complexity: v as GsiComplexity,
+                                              })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-7 w-16 shrink-0">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="L">L</SelectItem>
+                                              <SelectItem value="M">M</SelectItem>
+                                              <SelectItem value="H">H</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Select
+                                            value={overrides.level}
+                                            onValueChange={(v) =>
+                                              updateSelection(item, { level: v as GsiLevel })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-7 w-16 shrink-0">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {gsiLevels.map((level) => (
+                                                <SelectItem key={level} value={level}>
+                                                  {level}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Select
+                                            value={overrides.driver}
+                                            onValueChange={(v) =>
+                                              updateSelection(item, {
+                                                driver: v as InstanceDriver,
+                                              })
+                                            }
+                                          >
+                                            <SelectTrigger className="h-7 w-28 shrink-0">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {instanceDrivers.map((driver) => (
+                                                <SelectItem key={driver} value={driver}>
+                                                  {driver}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Input
+                                            type="number"
+                                            min={1}
+                                            value={overrides.instances ?? ""}
+                                            onChange={(e) =>
+                                              updateSelection(item, {
+                                                instances: e.target.value
+                                                  ? Number(e.target.value)
+                                                  : undefined,
+                                              })
+                                            }
+                                            placeholder="auto"
+                                            className="h-7 w-16 shrink-0"
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <button
+                                            type="button"
+                                            onClick={() => removeItem(item.id)}
+                                            className="text-muted-foreground hover:text-destructive"
+                                          >
+                                            <X className="h-4 w-4" />
+                                            <span className="sr-only">Remove {item.title}</span>
+                                          </button>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                              </Fragment>
+                            );
+                          })}
+                      </Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
+        )}
       </div>
 
       <Dialog

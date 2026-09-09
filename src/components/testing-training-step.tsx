@@ -152,17 +152,6 @@ export function TestingTrainingStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-border bg-card px-5 py-4">
-        <h2 className="text-base font-semibold text-card-foreground">
-          Step D — Testing, SWT, Training &amp; OCM calibration
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          <span className="text-primary">WRICEF objects (from Step C): {wricefObjects}</span>
-          {"   "}
-          <span className="text-primary">End users (from Step A): {endUsers}</span>
-        </p>
-      </div>
-
       <div className="rounded-xl border border-border bg-card px-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-semibold text-card-foreground">

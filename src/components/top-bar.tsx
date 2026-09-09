@@ -16,7 +16,7 @@ export function TopBar() {
   const { toggle } = useAssistant();
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-gradient-to-l from-gray-200 via-gray-100 to-sidebar relative dark:from-gray-800 dark:via-gray-900">
+    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-gradient-to-l from-gray-200 via-gray-100 to-sidebar relative dark:from-gray-800 dark:via-gray-900">
       <Image
         src="/kaar-pattern.svg"
         alt=""
@@ -26,7 +26,7 @@ export function TopBar() {
         className="pointer-events-none absolute top-0 right-0 -z-10 h-full w-auto select-none"
       />
 
-      <div className="flex h-14 w-12 shrink-0 items-center justify-center">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center">
         <SidebarTrigger className="text-foreground" />
       </div>
 
@@ -53,7 +53,7 @@ export function TopBar() {
         </>
       )}
 
-      <div className="ml-auto flex h-14 shrink-0 items-center pr-3">
+      <div className="ml-auto flex h-12 shrink-0 items-center pr-3">
         <Button
           type="button"
           variant="secondary"

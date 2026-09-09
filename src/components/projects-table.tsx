@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CopySimple, Trash } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
@@ -46,6 +47,8 @@ export function ProjectsTable({
   onClone: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const router = useRouter();
+
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <Table>
@@ -62,7 +65,11 @@ export function ProjectsTable({
         </TableHeader>
         <TableBody>
           {projects.map((project) => (
-            <TableRow key={project.id} className="bg-white dark:bg-card">
+            <TableRow
+              key={project.id}
+              onClick={() => router.push(`/projects/${project.id}`)}
+              className="cursor-pointer bg-white transition-colors hover:bg-muted/50 dark:bg-card"
+            >
               <TableCell className="font-medium text-card-foreground">
                 <Link
                   href={`/projects/${project.id}`}
@@ -100,7 +107,7 @@ export function ProjectsTable({
               <TableCell className="text-muted-foreground">
                 {project.date}
               </TableCell>
-              <TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-end gap-1">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

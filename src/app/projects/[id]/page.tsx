@@ -10,6 +10,7 @@ import {
   Question,
   CopySimple,
   Trash,
+  CaretDown,
 } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { SidebarInset } from "@/components/ui/sidebar";
 import {
   AlertDialog,
@@ -50,6 +50,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ScopeSelectionStep } from "@/components/scope-selection-step";
 import { FricewStep } from "@/components/fricew-step";
@@ -218,6 +225,8 @@ export default function ProjectDetailPage({
   const [scopeCount, setScopeCount] = useState(0);
   const [fricewTotals, setFricewTotals] = useState({ objects: 0, devHours: 0 });
   const [statsExpanded, setStatsExpanded] = useState(false);
+  const [profileCollapsed, setProfileCollapsed] = useState(false);
+  const [orgReviewOpen, setOrgReviewOpen] = useState(false);
   const [stepsNavCollapsed, setStepsNavCollapsed] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
@@ -312,23 +321,35 @@ export default function ProjectDetailPage({
       <div className="shrink-0 border-b border-border bg-background">
         <div className="w-full px-6 py-3">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-pretty text-foreground sm:text-lg">
-                {project.name}
-              </h1>
-              <div className="mt-0.5 flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">
-                  {project.customer ?? "— no customer —"}
-                </p>
-                {!statsExpanded && (
-                  <button
-                    type="button"
-                    onClick={() => setStatsExpanded(true)}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    View more
-                  </button>
-                )}
+            <div className="flex items-start gap-2">
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                className="mt-0.5 shrink-0"
+                aria-label="Back to Projects"
+                onClick={() => router.push("/")}
+              >
+                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              </Button>
+              <div>
+                <h1 className="text-base font-semibold tracking-tight text-pretty text-foreground sm:text-lg">
+                  {project.name}
+                </h1>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {project.customer ?? "— no customer —"}
+                  </p>
+                  {!statsExpanded && (
+                    <button
+                      type="button"
+                      onClick={() => setStatsExpanded(true)}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      View more
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -361,10 +382,6 @@ export default function ProjectDetailPage({
                   </SelectContent>
                 </Select>
               </div>
-              <Button variant="outline" onClick={handleClone} className="h-8 gap-1.5">
-                <CopySimple className="h-4 w-4" />
-                Clone
-              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -392,6 +409,10 @@ export default function ProjectDetailPage({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              <Button variant="secondary" onClick={handleClone} className="h-8 gap-1.5">
+                <CopySimple className="h-4 w-4" />
+                Clone
+              </Button>
             </div>
           </div>
 
@@ -429,8 +450,8 @@ export default function ProjectDetailPage({
             <nav
               aria-label="Estimation wizard steps"
               className={cn(
-                "w-full shrink-0 bg-background sm:border-r sm:border-border",
-                stepsNavCollapsed ? "sm:w-16 sm:px-2" : "sm:w-64 sm:pr-4 sm:pl-2"
+                "w-full shrink-0 bg-gradient-to-b from-background from-70% to-muted/60 sm:border-r sm:border-border",
+                stepsNavCollapsed ? "sm:w-16 sm:px-2" : "sm:w-52 sm:pr-4 sm:pl-2"
               )}
             >
               <div className="flex items-center justify-between gap-2 pt-6">
@@ -524,21 +545,56 @@ export default function ProjectDetailPage({
               </ul>
             </nav>
 
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white py-6 pr-3 pl-4 dark:bg-gray-900">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white py-6 pr-6 pl-6 dark:bg-gray-900">
               {activeStep === "profile-scope" ? (
                 <div className="flex flex-col gap-4">
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h2 className="text-base font-semibold text-foreground">
-                    Customer &amp; project profile
-                  </h2>
-                  <FieldHelp text="Basic customer context and delivery parameters used across every estimation step." />
+              <div
+                className={cn(
+                  "rounded-lg border border-border bg-card shadow-sm",
+                  profileCollapsed ? "p-0" : "p-6"
+                )}
+              >
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setProfileCollapsed((v) => !v)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setProfileCollapsed((v) => !v);
+                    }
+                  }}
+                  aria-expanded={!profileCollapsed}
+                  className={cn(
+                    "cursor-pointer bg-muted/50 px-6 py-4 text-left transition-colors hover:bg-muted/70",
+                    profileCollapsed
+                      ? "rounded-lg"
+                      : "-mx-6 -mt-6 mb-4 w-[calc(100%+3rem)] rounded-t-lg border-b border-border"
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">
+                        Customer &amp; project profile
+                      </h2>
+                      <FieldHelp text="Basic customer context and delivery parameters used across every estimation step." />
+                    </div>
+                    <CaretDown
+                      aria-hidden="true"
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                        profileCollapsed && "-rotate-90"
+                      )}
+                    />
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Core details used throughout this estimate.
+                  </p>
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Core details used throughout this estimate.
-                </p>
+                {!profileCollapsed && (
+                <>
                 <div className="mt-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         HQ Location
@@ -662,26 +718,15 @@ export default function ProjectDetailPage({
                       />
                       3rd-party PMO / audit involved
                     </label>
-                    <p className="mt-1 ml-6 text-xs text-muted-foreground">
-                      Review overhead when an external PMO/audit party is involved.
-                    </p>
                   </div>
                 </div>
 
-                <div className="mt-5 border-t border-border pt-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h2 className="text-sm font-semibold text-foreground">
-                          SAP products
-                        </h2>
-                        <FieldHelp text="SAP product family, such as S/4HANA On-Prem or S/4HANA Cloud." />
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Choose only the products included in this engagement.
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                <div className="mt-5">
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      SAP products
+                    </h2>
+                    <span className="text-xs font-medium text-muted-foreground">
                       {sapProducts.size} selected
                     </span>
                   </div>
@@ -694,10 +739,10 @@ export default function ProjectDetailPage({
                           type="button"
                           onClick={() => toggleSapProduct(product)}
                           className={cn(
-                            "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                            "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
                             selected
-                              ? "border-primary bg-primary/5 text-primary"
-                              : "border-input bg-transparent text-foreground hover:bg-muted"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-transparent bg-muted text-foreground hover:bg-muted/70"
                           )}
                         >
                           {product}
@@ -706,28 +751,46 @@ export default function ProjectDetailPage({
                     })}
                   </div>
                 </div>
+                </>
+                )}
               </div>
 
-              <Card className="gap-0 overflow-hidden rounded-lg py-0">
-                <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-r from-background to-muted px-5 py-4">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h2 className="text-base font-semibold text-card-foreground">
-                        Org-Complexity Drivers ({defaultOrgComplexityFactors.length})
-                      </h2>
-                      <FieldHelp text="Numeric drivers compare against Low/Medium thresholds; picklist drivers map directly to a level. Blank stays Low." />
+              <div className="mt-5 rounded-lg border border-border bg-card p-6 shadow-sm">
+                <div className="-mx-6 -mt-6 mb-4 w-[calc(100%+3rem)] rounded-t-lg border-b border-border bg-muted/50 px-6 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">
+                          Org-Complexity Drivers ({defaultOrgComplexityFactors.length})
+                        </h2>
+                        <FieldHelp text="Numeric drivers compare against Low/Medium thresholds; picklist drivers map directly to a level. Blank stays Low." />
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Default Low is taken for computation if a driver is not provided as input.
+                      </p>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Default Low is taken for computation if a driver is not provided as input.
-                    </p>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1.5"
+                        onClick={() => setOrgReviewOpen(true)}
+                      >
+                        Review inputs
+                        <Badge
+                          variant="outline"
+                          className="rounded-md border-amber-200 bg-amber-50 px-1.5 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400"
+                        >
+                          {pendingCount}
+                        </Badge>
+                      </Button>
+                    </div>
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-amber-600 dark:text-amber-400">
-                    {pendingCount} fields pending
-                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px]">
-                  <div className="border-border p-5 lg:border-r">
+                <div className="mt-4">
+                  <div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {defaultOrgComplexityFactors.map((factor) => {
                         const meta = driverFieldMeta[factor.key];
@@ -766,81 +829,8 @@ export default function ProjectDetailPage({
                       })}
                     </div>
                   </div>
-
-                  <div className="p-5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Org Complexity Multiplier
-                      </span>
-                      <FieldHelp text="orgMultiplier = round(average(all mapped factor multipliers), 4). Applies one overall complexity adjustment to Delivery and PMO effort." />
-                    </div>
-
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="text-3xl font-bold text-foreground tabular-nums">
-                        {orgMultiplier.toFixed(4)}
-                      </span>
-                      <span className="text-sm text-muted-foreground">Overall</span>
-                      <Badge
-                        variant="outline"
-                        className={cn("rounded-md px-1.5", levelBadgeClass(overall))}
-                      >
-                        {overall}
-                      </Badge>
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-3 text-xs font-medium">
-                      <span className="text-rose-600 dark:text-rose-400">
-                        {levelCounts.H} H
-                      </span>
-                      <span className="text-amber-600 dark:text-amber-400">
-                        {levelCounts.M} M
-                      </span>
-                      <span className="text-emerald-600 dark:text-emerald-400">
-                        {levelCounts.L} L
-                      </span>
-                    </div>
-
-                    <div className="mt-3">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="font-semibold">Factor</TableHead>
-                            <TableHead className="font-semibold">Value</TableHead>
-                            <TableHead className="font-semibold">Lvl</TableHead>
-                            <TableHead className="text-right font-semibold">Mult</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {displayedFactors.map((factor) => (
-                            <TableRow key={factor.key}>
-                              <TableCell className="text-primary">
-                                {factor.label}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground italic">
-                                {factor.value}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    "rounded-md px-1.5",
-                                    levelBadgeClass(factor.level)
-                                  )}
-                                >
-                                  {factor.level}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right tabular-nums">
-                                {factor.multiplier.toFixed(2)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
                 </div>
-              </Card>
+              </div>
                 </div>
               ) : activeStep === "scope-selection" ? (
                 <ScopeSelectionStep
@@ -897,6 +887,74 @@ export default function ProjectDetailPage({
           </div>
         </div>
       </div>
+
+      <Sheet open={orgReviewOpen} onOpenChange={setOrgReviewOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl!">
+          <SheetHeader>
+            <SheetTitle>Org Complexity Multiplier</SheetTitle>
+            <SheetDescription>
+              The overall complexity score, averaged across all drivers below. It scales
+              Delivery and PMO effort estimates up or down.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-3xl font-bold text-foreground tabular-nums">
+                {orgMultiplier.toFixed(4)}
+              </span>
+              <span className="text-sm text-muted-foreground">Overall</span>
+              <Badge
+                variant="outline"
+                className={cn("rounded-md px-1.5", levelBadgeClass(overall))}
+              >
+                {overall}
+              </Badge>
+            </div>
+
+            <div className="mt-2 flex items-center gap-3 text-xs font-medium">
+              <span className="text-rose-600 dark:text-rose-400">{levelCounts.H} H</span>
+              <span className="text-amber-600 dark:text-amber-400">{levelCounts.M} M</span>
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {levelCounts.L} L
+              </span>
+            </div>
+
+            <div className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-semibold">Factor</TableHead>
+                    <TableHead className="font-semibold">Value</TableHead>
+                    <TableHead className="font-semibold">Lvl</TableHead>
+                    <TableHead className="text-right font-semibold">Mult</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayedFactors.map((factor) => (
+                    <TableRow key={factor.key}>
+                      <TableCell className="text-primary">{factor.label}</TableCell>
+                      <TableCell className="text-muted-foreground italic">
+                        {factor.value}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={cn("rounded-md px-1.5", levelBadgeClass(factor.level))}
+                        >
+                          {factor.level}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {factor.multiplier.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </SidebarInset>
   );
 }
