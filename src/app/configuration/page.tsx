@@ -16,6 +16,16 @@ import { masterDataCategories } from "@/lib/master-data";
 import { cn } from "@/lib/utils";
 import { useSetTopBar } from "@/lib/top-bar-context";
 
+const cardBanners = [
+  "from-orange-400 to-rose-500",
+  "from-sky-400 to-blue-600",
+  "from-emerald-400 to-teal-600",
+  "from-violet-400 to-purple-600",
+  "from-amber-400 to-orange-600",
+  "from-rose-400 to-pink-600",
+  "from-slate-500 to-slate-700",
+];
+
 export default function ConfigurationPage() {
   const [seeding, setSeeding] = useState(false);
   const [seededAt, setSeededAt] = useState<Date | null>(null);
@@ -52,7 +62,7 @@ export default function ConfigurationPage() {
       <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50">
         <div className="mx-auto w-full max-w-[1400px] px-2 pt-3 pb-6 sm:px-3 sm:pt-4 sm:pb-8">
         {!statusDismissed && (
-          <div className="relative flex items-start gap-3 overflow-hidden rounded-xl bg-orange-50 px-5 py-4 dark:bg-orange-950/40">
+          <div className="relative flex items-center gap-3 overflow-hidden rounded-xl border border-orange-200 bg-orange-50 px-5 py-3 dark:border-orange-900 dark:bg-orange-950/40">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-semibold text-foreground">
@@ -73,7 +83,7 @@ export default function ConfigurationPage() {
                   </span>
                 )}
               </p>
-              <div className="mt-2 flex items-center gap-2 text-sm">
+              <div className="mt-1.5 flex items-center gap-2 text-sm">
                 <button
                   type="button"
                   onClick={handleReseed}
@@ -96,44 +106,68 @@ export default function ConfigurationPage() {
                 </button>
               </div>
             </div>
+            <Image
+              src="/master-data-status-illustration-v2.png"
+              alt=""
+              aria-hidden="true"
+              width={220}
+              height={96}
+              className="hidden h-[96px] w-[220px] shrink-0 object-contain sm:block"
+            />
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 xl:grid-cols-3">
-          {masterDataCategories.map((category) => (
-            <Card key={category.slug} className="gap-0 rounded-lg py-0">
-              <CardContent className="flex flex-col gap-3 px-5 py-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base font-semibold text-card-foreground">
-                    {category.title}
-                  </h3>
-                  <Badge
-                    variant="secondary"
-                    className="rounded-md bg-accent px-2 font-medium text-accent-foreground"
-                  >
+        <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+          {masterDataCategories.map((category, index) => (
+            <Link
+              key={category.slug}
+              href={`/configuration/${category.slug}`}
+              aria-label={`Open ${category.title}`}
+              className="flex h-full"
+            >
+            <Card className="w-full gap-0 overflow-hidden rounded-xl py-0 transition-shadow hover:shadow-md h-full">
+              <div
+                className={cn(
+                  "relative flex h-36 items-start overflow-hidden px-3 pt-2.5",
+                  !category.image &&
+                    cn("bg-gradient-to-br", cardBanners[index % cardBanners.length])
+                )}
+              >
+                {category.image && (
+                  <Image
+                    src={category.image}
+                    alt=""
+                    aria-hidden="true"
+                    fill
+                    className="object-cover"
+                  />
+                )}
+                {category.image && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/85 via-white/35 to-transparent" />
+                )}
+                <div className="relative flex flex-1 flex-wrap items-center justify-between gap-1.5">
+                  <span className="rounded-full bg-emerald-100/90 px-2.5 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
+                    Seeded
+                  </span>
+                  <span className="rounded-full bg-gray-600/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                    {category.version.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <CardContent className="flex flex-1 flex-col gap-2 px-4 pt-3 pb-4">
+                <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-card-foreground">
+                  {category.title}
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     {category.rowCount.toLocaleString()} row
                     {category.rowCount === 1 ? "" : "s"}
-                  </Badge>
-                  <Badge className="shrink-0 rounded-md border-emerald-200 bg-emerald-50 px-2 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
-                    Seeded
-                  </Badge>
-                  <Link
-                    href={`/configuration/${category.slug}`}
-                    aria-label={`Open ${category.title}`}
-                    className="group ml-auto shrink-0 text-muted-foreground transition-colors hover:text-primary"
-                  >
-                    <ArrowRight
-                      aria-hidden="true"
-                      className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                    />
-                  </Link>
-                </div>
-
+                  </span>
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   {category.description}
                 </p>
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
         </div>

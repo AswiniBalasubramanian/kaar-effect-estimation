@@ -4,6 +4,7 @@ export interface MasterDataCategory {
   description: string;
   rowCount: number;
   version: string;
+  image?: string;
   breakdown?: { label: string; count: number }[];
 }
 
@@ -12,9 +13,10 @@ export const masterDataCategories: MasterDataCategory[] = [
     slug: "gsi-catalog",
     title: "GSI Catalog",
     description:
-      "Global Scope Items across products, business areas, and processes. Complexity and level here are suggested defaults — set the actual complexity for your project in its Scope Selection step.",
+      "Global Scope Items by product, business area, and process. Complexity and level shown are defaults — set your project's actual values in Scope Selection.",
     rowCount: 1335,
     version: "v2",
+    image: "/gsi-catalog-illustration-v3.png",
     breakdown: [
       { label: "Ariba", count: 125 },
       { label: "S4H_OnPrem", count: 372 },
@@ -28,6 +30,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     description: "Base hours per activity by scope level and complexity",
     rowCount: 38,
     version: "v1",
+    image: "/activity-effort-illustration-v2.png",
   },
   {
     slug: "fricew-objects",
@@ -35,6 +38,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     description: "Effort (md) per custom object type and complexity",
     rowCount: 8,
     version: "v1",
+    image: "/fricew-objects-illustration-v3.png",
   },
   {
     slug: "org-complexity",
@@ -42,6 +46,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     description: "Organisational drivers and their effort multipliers",
     rowCount: 15,
     version: "v1",
+    image: "/org-complexity-illustration-v2.png",
   },
   {
     slug: "roles",
@@ -49,6 +54,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     description: "Delivery roles and their effort-distribution factors",
     rowCount: 12,
     version: "v1",
+    image: "/roles-illustration-v2.png",
   },
   {
     slug: "thresholds-switches",
@@ -56,6 +62,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     description: "Global calculation parameters and feature switches",
     rowCount: 1,
     version: "v1",
+    image: "/thresholds-switches-illustration-v2.png",
   },
   {
     slug: "phase-template",
@@ -63,6 +70,7 @@ export const masterDataCategories: MasterDataCategory[] = [
     description: "KDM phase / deliverable / activity plan skeleton",
     rowCount: 10,
     version: "v1",
+    image: "/phase-template-illustration-v2.png",
   },
 ];
 
