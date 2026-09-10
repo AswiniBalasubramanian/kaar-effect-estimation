@@ -31,6 +31,10 @@ import {
   projectTypeBadgeClass,
   type Project,
 } from "@/lib/projects";
+import {
+  DEFAULT_COLUMN_VISIBILITY,
+  type ProjectColumnVisibility,
+} from "@/components/column-customize-sheet";
 
 const typeLabel: Record<Project["type"], string> = {
   greenfield: "Greenfield",
@@ -42,10 +46,12 @@ export function ProjectsTable({
   projects,
   onClone,
   onDelete,
+  columnVisibility = DEFAULT_COLUMN_VISIBILITY,
 }: {
   projects: Project[];
   onClone: (id: string) => void;
   onDelete: (id: string) => void;
+  columnVisibility?: ProjectColumnVisibility;
 }) {
   const router = useRouter();
 
@@ -55,11 +61,11 @@ export function ProjectsTable({
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Region</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Date</TableHead>
+            {columnVisibility.customer && <TableHead>Customer</TableHead>}
+            {columnVisibility.type && <TableHead>Type</TableHead>}
+            {columnVisibility.region && <TableHead>Region</TableHead>}
+            {columnVisibility.status && <TableHead>Status</TableHead>}
+            {columnVisibility.date && <TableHead>Date</TableHead>}
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -78,35 +84,45 @@ export function ProjectsTable({
                   {project.name}
                 </Link>
               </TableCell>
-              <TableCell className="text-muted-foreground">
-                {project.customer ?? "— no customer —"}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  className={cn(
-                    "rounded-full px-2 font-medium",
-                    projectTypeBadgeClass[project.type]
-                  )}
-                >
-                  {typeLabel[project.type]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {project.region ?? "—"}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  className={cn(
-                    "rounded-md px-2 font-medium",
-                    projectStatusBadgeClass[project.status]
-                  )}
-                >
-                  {projectStatusLabel[project.status]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {project.date}
-              </TableCell>
+              {columnVisibility.customer && (
+                <TableCell className="text-muted-foreground">
+                  {project.customer ?? "— no customer —"}
+                </TableCell>
+              )}
+              {columnVisibility.type && (
+                <TableCell>
+                  <Badge
+                    className={cn(
+                      "rounded-full px-2 font-medium",
+                      projectTypeBadgeClass[project.type]
+                    )}
+                  >
+                    {typeLabel[project.type]}
+                  </Badge>
+                </TableCell>
+              )}
+              {columnVisibility.region && (
+                <TableCell className="text-muted-foreground">
+                  {project.region ?? "—"}
+                </TableCell>
+              )}
+              {columnVisibility.status && (
+                <TableCell>
+                  <Badge
+                    className={cn(
+                      "rounded-md px-2 font-medium",
+                      projectStatusBadgeClass[project.status]
+                    )}
+                  >
+                    {projectStatusLabel[project.status]}
+                  </Badge>
+                </TableCell>
+              )}
+              {columnVisibility.date && (
+                <TableCell className="text-muted-foreground">
+                  {project.date}
+                </TableCell>
+              )}
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-end gap-1">
                   <AlertDialog>

@@ -254,6 +254,28 @@ export function ScopeSelectionStep({
 
   const inScope = selectedItems.length;
 
+  const scopeSummary = useMemo(() => {
+    let high = 0;
+    let medium = 0;
+    let low = 0;
+    let custom = 0;
+    let autoDefaulted = 0;
+    for (const item of selectedItems) {
+      const overrides = selected[item.id] ?? defaultOverrides(item);
+      if (overrides.complexity === "H") high++;
+      else if (overrides.complexity === "M") medium++;
+      else low++;
+      if (item.id.startsWith("CUSTOM-")) custom++;
+      const isUnmodified =
+        overrides.complexity === item.defaultComplexity &&
+        overrides.level === item.defaultLevel &&
+        overrides.driver === item.defaultInstanceDriver &&
+        (overrides.instances ?? item.instances) === item.instances;
+      if (isUnmodified) autoDefaulted++;
+    }
+    return { high, medium, low, custom, autoDefaulted };
+  }, [selectedItems, selected]);
+
   useEffect(() => {
     onInScopeChange?.(inScope);
   }, [inScope, onInScopeChange]);
@@ -1032,10 +1054,12 @@ export function ScopeSelectionStep({
               {selected[detailItem.id] !== undefined ? "Remove from Scope" : "Add to Scope"}
             </Button>
           </div>
-        ) : cartCollapsed ? null : (
+        ) : null}
+
+        {!cartCollapsed && (
         <div
           style={{ "--cart-width": `${cartWidth}px` } as CSSProperties}
-          className="relative sticky top-4 max-h-[calc(100vh-6rem)] w-full shrink-0 self-start overflow-y-auto rounded-xl bg-white p-5 pl-6 shadow-sm dark:bg-gray-900 lg:w-[var(--cart-width)]"
+          className="fixed inset-y-12 right-0 z-30 w-full shrink-0 overflow-y-auto border-l border-border bg-white p-5 pl-6 shadow-xl dark:bg-gray-900 sm:w-[var(--cart-width)]"
         >
           <div
             role="separator"
@@ -1056,12 +1080,32 @@ export function ScopeSelectionStep({
               aria-label="Collapse selected scope cart"
               className="ml-auto shrink-0 text-muted-foreground hover:text-foreground"
             >
-              <CaretRight className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Review and adjust the complexity that applies to this project before saving.
           </p>
+
+          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {[
+              { label: "In Scope", value: inScope },
+              { label: "High", value: scopeSummary.high },
+              { label: "Medium", value: scopeSummary.medium },
+              { label: "Low", value: scopeSummary.low },
+              { label: "Custom", value: scopeSummary.custom },
+              { label: "Auto-Defaulted", value: scopeSummary.autoDefaulted },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-lg border border-border px-3 py-2">
+                <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                  {stat.label}
+                </p>
+                <p className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">
+                  {stat.value}
+                </p>
+              </div>
+            ))}
+          </div>
 
           {selectedByProductThenArea.size === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">No scope items selected yet.</p>

@@ -606,7 +606,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         HQ Location
-                        <FieldHelp text="Customer's primary location or headquarters." />
                       </Label>
                       <Input
                         value={hqLocation}
@@ -619,7 +618,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         Industry
-                        <FieldHelp text="Customer industry, such as SAP, Manufacturing, Retail, or Services." />
                       </Label>
                       <Input
                         value={industry}
@@ -633,7 +631,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         Go-Live Target
-                        <FieldHelp text="Expected production go-live date." />
                       </Label>
                       <Input
                         type="date"
@@ -645,7 +642,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         Duration (weeks)
-                        <FieldHelp text="Total planned project duration in weeks." />
                       </Label>
                       <Input
                         type="number"
@@ -659,7 +655,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         Hours / Day
-                        <FieldHelp text="Working hours in one person-day." />
                       </Label>
                       <Input
                         type="number"
@@ -673,7 +668,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         Training Type
-                        <FieldHelp text="Training approach such as End User or Train-the-Trainer." />
                       </Label>
                       <Select value={trainingType} onValueChange={setTrainingType}>
                         <SelectTrigger className="w-full">
@@ -691,7 +685,6 @@ export default function ProjectDetailPage({
                     <div className="flex flex-col gap-1.5">
                       <Label className="flex items-center gap-1.5 text-sm">
                         Max Persons / Training
-                        <FieldHelp text="Maximum participants per training session." />
                       </Label>
                       <Input
                         type="number"
@@ -771,7 +764,6 @@ export default function ProjectDetailPage({
                         <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">
                           Org-Complexity Drivers ({defaultOrgComplexityFactors.length})
                         </h2>
-                        <FieldHelp text="Numeric drivers compare against Low/Medium thresholds; picklist drivers map directly to a level. Blank stays Low." />
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         Default Low is taken for computation if a driver is not provided as input.
@@ -807,7 +799,6 @@ export default function ProjectDetailPage({
                           <div key={factor.key} className="flex flex-col gap-1.5">
                             <Label className="flex items-center gap-1.5 text-sm">
                               {factor.label}
-                              <FieldHelp text={meta.help} />
                             </Label>
                             {meta.type === "select" ? (
                               <Select

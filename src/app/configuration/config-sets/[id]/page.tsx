@@ -149,7 +149,7 @@ export default function ConfigSetDetailPage({
                         <span className="rounded-full bg-gray-100/90 px-2.5 py-1 text-xs font-medium text-gray-700 backdrop-blur-sm">
                           Seeded
                         </span>
-                        <span className="rounded-full bg-emerald-100/90 px-2.5 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
+                        <span className="rounded-full bg-blue-100/90 px-2.5 py-1 text-xs font-medium text-blue-700 backdrop-blur-sm">
                           Editable
                         </span>
                       </div>

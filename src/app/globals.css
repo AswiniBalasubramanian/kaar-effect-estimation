@@ -152,7 +152,13 @@ html[data-font="dm-sans"] {
 .gradient-border-spin {
   border: 2px solid transparent;
   background:
-    linear-gradient(var(--secondary), var(--secondary)) padding-box,
+    linear-gradient(#fff, #fff) padding-box,
     conic-gradient(from var(--border-angle), #f97316, #ef4444, #f97316) border-box;
   animation: border-spin 3s linear infinite;
+}
+
+.dark .gradient-border-spin {
+  background:
+    linear-gradient(var(--secondary), var(--secondary)) padding-box,
+    conic-gradient(from var(--border-angle), #f97316, #ef4444, #f97316) border-box;
 }

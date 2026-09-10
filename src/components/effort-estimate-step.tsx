@@ -1,8 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
-import { CaretDown, SlidersHorizontal } from "@phosphor-icons/react";
+import {
+  ArrowRight,
+  CheckCircle,
+  DotsSixVertical,
+  DotsThree,
+  Sliders,
+  TrendDown,
+  TrendUp,
+} from "@phosphor-icons/react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +25,11 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DEFAULT_WIDGET_VISIBILITY,
+  WidgetCustomizeSheet,
+  type EffortWidgetVisibility,
+} from "@/components/widget-customize-sheet";
 import { cn } from "@/lib/utils";
 import type { GsiCatalogItem } from "@/lib/gsi-catalog";
 
@@ -50,6 +63,15 @@ interface Phase {
   barClass: string;
   mlPct: number;
 }
+
+const FTE_HEATMAP_COLUMN_CLASSES = [
+  "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400",
+  "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+  "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-400",
+  "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+  "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-400",
+  "text-foreground",
+];
 
 const PHASES: Phase[] = [
   { key: "discover", label: "1. Discover", pct: 0.06, hasDelivery: false, deliveryPerGsi: 0, barClass: "bg-muted-foreground/40", mlPct: 0 },
@@ -120,6 +142,37 @@ const ML_PROJECT_COUNT = 11;
 const ML_MODEL_VERSION = "v11.v3";
 const ML_CONFIDENCE = 66;
 
+// ---- Agent Impact (illustrative model) ----
+// Realization factor: share of "automatable" hours an agent actually removes,
+// after accounting for human review/oversight that stays in the loop.
+const AGENT_REALIZATION = 0.65;
+const AGENT_BLENDED_COST_PER_MTOK = 9; // approx $ per 1M tokens, blended input/output
+const AGENT_BILL_RATE_PER_HR = 85; // $ revenue per man-hour, fixed-price engagement basis
+const AGENT_LABOR_COST_PER_HR = 42; // $ fully-loaded delivery cost per man-hour
+const AGENT_DURATION_FLOOR_PCT = 0.6; // schedule can't compress below 60% of baseline
+
+interface AgentActivityProfile {
+  key: string;
+  activity: string;
+  phaseKey: string;
+  phaseLabel: string;
+  team: "PMO" | "Delivery";
+  automationPct: number;
+  tokensPerHourSaved: number;
+  rationale: string;
+}
+
+const AGENT_ACTIVITY_PROFILES: AgentActivityProfile[] = [
+  { key: "scrum", activity: "Daily Scrum", phaseKey: "all", phaseLabel: "All phases", team: "PMO", automationPct: 0.1, tokensPerHourSaved: 8000, rationale: "Mostly synchronous human coordination." },
+  { key: "mom", activity: "MOM Generation", phaseKey: "all", phaseLabel: "All phases", team: "PMO", automationPct: 0.85, tokensPerHourSaved: 6000, rationale: "Transcription + summarization is a strong agent fit." },
+  { key: "risk", activity: "Risk Management", phaseKey: "all", phaseLabel: "All phases", team: "PMO", automationPct: 0.3, tokensPerHourSaved: 12000, rationale: "Agent drafts risk register updates; PM still judges severity." },
+  { key: "steerco", activity: "Steering Committee Meeting", phaseKey: "all", phaseLabel: "All phases", team: "PMO", automationPct: 0.15, tokensPerHourSaved: 9000, rationale: "Deck/status prep can be agent-assisted; the meeting itself can't." },
+  { key: "explore-delivery", activity: "GSI Delivery Work", phaseKey: "explore", phaseLabel: "3. Explore", team: "Delivery", automationPct: 0.45, tokensPerHourSaved: 42000, rationale: "Fit-gap drafts, config research, documentation." },
+  { key: "realize-delivery", activity: "GSI Delivery Work", phaseKey: "realize", phaseLabel: "4. Realize", team: "Delivery", automationPct: 0.55, tokensPerHourSaved: 58000, rationale: "Config/code scaffolding, unit test generation." },
+  { key: "deploy-delivery", activity: "GSI Delivery Work", phaseKey: "deploy", phaseLabel: "5. Deploy", team: "Delivery", automationPct: 0.4, tokensPerHourSaved: 33000, rationale: "Test script generation, cutover runbook drafting." },
+];
+const AGENT_AUTOMATABLE_THRESHOLD = 0.2;
+
 function ceilToHalf(value: number) {
   if (!Number.isFinite(value) || value <= 0) return 0;
   return Math.ceil(value * 2) / 2;
@@ -189,7 +242,11 @@ export function EffortEstimateStep({
   selectedGsis?: GsiCatalogItem[];
   assumptions?: { field: string; default: string; reason: string }[];
 }) {
-  const [mode, setMode] = useState<"formula" | "ml" | "compare">("formula");
+  const [mode, setMode] = useState<"formula" | "ml" | "compare" | "agent">("formula");
+  const [widgetVisibility, setWidgetVisibility] = useState<EffortWidgetVisibility>(
+    DEFAULT_WIDGET_VISIBILITY
+  );
+  const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
   const [computedSnapshot, setComputedSnapshot] = useState<
     null | { hash: string; inputsKey: string }
@@ -454,49 +511,135 @@ export function EffortEstimateStep({
     mlPersonDaysP50Rounded < 5000 ? 1 : mlPersonDaysP50Rounded < 20000 ? 2 : mlPersonDaysP50Rounded < 80000 ? 3 : 5;
   const maxMlPhaseHrs = Math.max(...mlPhaseRows.map((r) => r.mlHrs), 1);
 
+  // ---- Agent Impact calculations ----
+  const agentGoalRows = rows.map((r) => ({
+    key: r.key,
+    label: r.label,
+    hoursZeroAgent: r.totalHrs,
+    pctOfTotal: totalEffort > 0 ? (r.totalHrs / totalEffort) * 100 : 0,
+  }));
+  const maxAgentGoalHrs = Math.max(...agentGoalRows.map((r) => r.hoursZeroAgent), 1);
+
+  const agentActivityRows = useMemo(() => {
+    return AGENT_ACTIVITY_PROFILES.map((profile) => {
+      const hoursZeroAgent =
+        profile.phaseKey === "all"
+          ? roleHourEntries
+              .filter((e) => e.team === profile.team && e.activity === profile.activity)
+              .reduce((sum, e) => sum + e.hours, 0)
+          : roleHourEntries
+              .filter(
+                (e) =>
+                  e.team === profile.team &&
+                  e.activity === profile.activity &&
+                  e.phaseKey === profile.phaseKey
+              )
+              .reduce((sum, e) => sum + e.hours, 0);
+      const hoursAutomatable = hoursZeroAgent * profile.automationPct;
+      const hoursSaved = hoursAutomatable * AGENT_REALIZATION;
+      const hoursWithAgent = hoursZeroAgent - hoursSaved;
+      const tokens = hoursSaved * profile.tokensPerHourSaved;
+      const cost = (tokens / 1_000_000) * AGENT_BLENDED_COST_PER_MTOK;
+      return { ...profile, hoursZeroAgent, hoursAutomatable, hoursSaved, hoursWithAgent, tokens, cost };
+    });
+  }, [roleHourEntries]);
+
+  const agentAutomatableCount = agentActivityRows.filter(
+    (r) => r.automationPct >= AGENT_AUTOMATABLE_THRESHOLD
+  ).length;
+
+  const agentWorkGroupRows = useMemo(() => {
+    const groups = new Map<
+      string,
+      { activity: string; hoursZeroAgent: number; hoursSaved: number; hoursWithAgent: number; tokens: number; cost: number }
+    >();
+    for (const r of agentActivityRows) {
+      const existing = groups.get(r.activity) ?? {
+        activity: r.activity,
+        hoursZeroAgent: 0,
+        hoursSaved: 0,
+        hoursWithAgent: 0,
+        tokens: 0,
+        cost: 0,
+      };
+      existing.hoursZeroAgent += r.hoursZeroAgent;
+      existing.hoursSaved += r.hoursSaved;
+      existing.hoursWithAgent += r.hoursWithAgent;
+      existing.tokens += r.tokens;
+      existing.cost += r.cost;
+      groups.set(r.activity, existing);
+    }
+    return Array.from(groups.values()).map((g) => ({
+      ...g,
+      pctReduction: g.hoursZeroAgent > 0 ? (g.hoursSaved / g.hoursZeroAgent) * 100 : 0,
+    }));
+  }, [agentActivityRows]);
+
+  const agentTotalHoursSaved = agentActivityRows.reduce((s, r) => s + r.hoursSaved, 0);
+  const agentTotalHoursWithAgent = Math.max(totalEffort - agentTotalHoursSaved, 0);
+  const agentTotalTokens = agentActivityRows.reduce((s, r) => s + r.tokens, 0);
+  const agentTotalCost = agentActivityRows.reduce((s, r) => s + r.cost, 0);
+  const agentSavedPct = totalEffort > 0 ? (agentTotalHoursSaved / totalEffort) * 100 : 0;
+
+  const agentDurationZeroWeeks = durationWeeks;
+  const agentDurationWithAgentWeeks =
+    totalEffort > 0
+      ? Math.max(
+          durationWeeks * AGENT_DURATION_FLOOR_PCT,
+          Math.round(durationWeeks * (agentTotalHoursWithAgent / totalEffort) * 10) / 10
+        )
+      : durationWeeks;
+  const agentWeeksSaved = Math.max(agentDurationZeroWeeks - agentDurationWithAgentWeeks, 0);
+
+  const agentRevenue = totalEffort * AGENT_BILL_RATE_PER_HR;
+  const agentCostZeroAgent = totalEffort * AGENT_LABOR_COST_PER_HR;
+  const agentGmZeroAgent = agentRevenue - agentCostZeroAgent;
+  const agentGmpeZeroAgentPct = agentRevenue > 0 ? (agentGmZeroAgent / agentRevenue) * 100 : 0;
+  const agentCostWithAgent = agentTotalHoursWithAgent * AGENT_LABOR_COST_PER_HR + agentTotalCost;
+  const agentGmWithAgent = agentRevenue - agentCostWithAgent;
+  const agentGmpeWithAgentPct = agentRevenue > 0 ? (agentGmWithAgent / agentRevenue) * 100 : 0;
+  const agentGmpeUpliftPts = agentGmpeWithAgentPct - agentGmpeZeroAgentPct;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="bg-gradient-to-r from-primary to-neutral-900 bg-clip-text text-base font-semibold text-transparent dark:to-neutral-100">Estimation Mode</h2>
-            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
-              ML ready
-            </span>
-          </div>
-          <Tabs
-            value={mode}
-            onValueChange={(value) => setMode(value as "formula" | "ml" | "compare")}
-            className="w-full sm:w-auto"
-          >
-            <TabsList className="grid h-10 w-full grid-cols-1 p-1 sm:w-[440px] sm:grid-cols-3">
-              <TabsTrigger value="formula">Formula (KDM)</TabsTrigger>
-              <TabsTrigger value="ml">ML Prediction</TabsTrigger>
-              <TabsTrigger value="compare">Compare Both</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          {mode === "formula" &&
-            "Using the deterministic KDM formula engine. All effort values are reproducible from the frozen master snapshot."}
-          {mode === "ml" &&
-            `Using ML models trained on historical KaarTech projects. Shows P50/P75/P90 ranges.`}
-          {mode === "compare" && "Side-by-side comparison · Formula (KDM) vs ML Prediction"}
-        </p>
+        <Tabs
+          value={mode}
+          onValueChange={(value) => setMode(value as "formula" | "ml" | "compare" | "agent")}
+          className="w-full"
+        >
+          <TabsList className="grid h-10 w-full grid-cols-1 bg-muted p-1 shadow-sm sm:w-[560px] sm:grid-cols-4">
+            <TabsTrigger value="formula">Formula (KDM)</TabsTrigger>
+            <TabsTrigger value="ml">ML Prediction</TabsTrigger>
+            <TabsTrigger value="compare">Compare Both</TabsTrigger>
+            <TabsTrigger value="agent">Agent Impact</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {mode === "formula" && (
         <>
-          <div className="border-t border-border pt-6">
+          <div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1.5">
                 <h2 className="text-base font-semibold text-card-foreground">Effort Estimation</h2>
                 <FieldHelp text="Baseline KDM formula built from Steps A–D: org multiplier × in-scope GSIs feeds Delivery hours, duration × hours/day feeds PMO governance hours. Uses a representative phase/hours model since the full Activity Effort master isn't loaded yet — swap in real master data to replace these baseline rates." />
               </div>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm">
-                  Reset to Defaults
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Customize widgets"
+                      aria-expanded={widgetsOpen}
+                      onClick={() => setWidgetsOpen(true)}
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <Sliders className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Customize widgets</TooltipContent>
+                </Tooltip>
                 <Button type="button" variant="outline" size="sm">
                   Export Effort
                 </Button>
@@ -510,39 +653,6 @@ export function EffortEstimateStep({
               appendix. Effort is reported in man-hours.
             </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-lg border border-border bg-background px-4 py-3">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  In-Scope GSIs
-                </p>
-                <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                  {inScopeGsis}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-background px-4 py-3">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Drivers Provided
-                </p>
-                <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                  {driversProvided} / {driversTotal}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-background px-4 py-3">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Duration (wks)
-                </p>
-                <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                  {durationWeeks}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-background px-4 py-3">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Industry
-                </p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{industry || "—"}</p>
-              </div>
-            </div>
-
             {computedSnapshot && mastersUpdated && (
               <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
                 <span className="font-medium">Inputs updated</span> since this estimate was
@@ -551,64 +661,9 @@ export function EffortEstimateStep({
               </p>
             )}
 
-            <button
-              type="button"
-              onClick={() => setShowAudit((v) => !v)}
-              className={cn(
-                "mt-3 flex w-full items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted",
-                showAudit && "rounded-b-none border-b-0"
-              )}
-            >
-              <span className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-                Advanced audit controls
-              </span>
-              <CaretDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform",
-                  showAudit && "rotate-180"
-                )}
-              />
-            </button>
-            {showAudit && (
-              <div className="rounded-b-lg border border-t-0 border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
-                <p>
-                  Org Multiplier:{" "}
-                  <span className="tabular-nums text-foreground">{orgMultiplier.toFixed(4)}</span>{" "}
-                  · Hours/Day: <span className="tabular-nums text-foreground">{hoursPerDay}</span>{" "}
-                  · PMO utilization: {Math.round(PMO_UTILIZATION * 100)}% · Peak FTE utilization:{" "}
-                  {Math.round(PEAK_FTE_UTILIZATION * 100)}%
-                </p>
-                {computedSnapshot && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span>
-                      Snapshot hash{" "}
-                      <span className="rounded bg-background px-1.5 py-0.5 font-mono text-foreground">
-                        {computedSnapshot.hash}
-                      </span>
-                    </span>
-                    <Button type="button" size="sm" variant="outline" onClick={handleVerify}>
-                      Verify determinism
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={locked ? "secondary" : "outline"}
-                      onClick={() => setLocked(true)}
-                    >
-                      {locked ? "Baseline locked" : "Lock as baseline"}
-                    </Button>
-                  </div>
-                )}
-                {verifyMessage && <p className="mt-1.5 text-foreground">{verifyMessage}</p>}
-                {!computedSnapshot && (
-                  <p className="mt-1.5">Click Compute Estimate to generate a snapshot hash.</p>
-                )}
-              </div>
-            )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 border-t border-border pt-6 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Card className="gap-1 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/0 py-5 ring-primary/20 sm:col-span-1">
               <CardHeader className="gap-1 px-4">
                 <div className="flex items-center gap-1.5">
@@ -617,9 +672,9 @@ export function EffortEstimateStep({
                   </CardDescription>
                   <FieldHelp text="Total Effort = sum of PMO hours + Delivery hours across all six phases." />
                 </div>
-                <CardTitle className="text-4xl font-bold tabular-nums text-primary">
+                <CardTitle className="text-2xl font-semibold tabular-nums text-primary">
                   {fmt(totalEffort)}
-                  <span className="ml-1 text-lg font-medium text-primary/70">hrs</span>
+                  <span className="ml-1 text-sm font-medium text-primary/70">hrs</span>
                 </CardTitle>
               </CardHeader>
               <p className="px-4 text-xs text-muted-foreground">
@@ -656,7 +711,8 @@ export function EffortEstimateStep({
             </Card>
           </div>
 
-          <div className="border-t border-border pt-6">
+          {widgetVisibility.effortByPhase && (
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">Effort by Phase</h2>
               <FieldHelp text="Bar length is based on total man-hours per phase (PMO in gray, Delivery colored per phase)." />
@@ -715,8 +771,10 @@ export function EffortEstimateStep({
               </table>
             </div>
           </div>
+          )}
 
-          <div className="border-t border-border pt-6">
+          {widgetVisibility.moduleSummary && (
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Module Summary — Scope, Hours
@@ -794,25 +852,11 @@ export function EffortEstimateStep({
               </div>
             )}
 
-            {moduleRows.length > 0 && (
-              <div className="mt-3">
-                <p className="text-xs font-medium text-muted-foreground">Module Scope Status</p>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {moduleRows.map((m) => (
-                    <Badge
-                      key={m.module}
-                      variant="outline"
-                      className="rounded-md border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
-                    >
-                      {m.module}: {m.count} active GSI{m.count === 1 ? "" : "s"}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+          )}
 
-          <div className="border-t border-border pt-6">
+          {widgetVisibility.executiveSummary && (
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Executive Summary — Phase Breakdown (man-hours)
@@ -880,8 +924,10 @@ export function EffortEstimateStep({
               </table>
             </div>
           </div>
+          )}
 
-          <div className="border-t border-border pt-6">
+          {widgetVisibility.phaseTimeline && (
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Phase Timeline &amp; Schedule
@@ -949,13 +995,11 @@ export function EffortEstimateStep({
                 </tbody>
               </table>
             </div>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">
-              Peak FTE is each phase&rsquo;s own FTE = CEILING(phase hrs / (phase weeks × 5 ×
-              hrs/day × 0.75), 0.5).
-            </p>
           </div>
+          )}
 
-          <div className="border-t border-border pt-6">
+          {widgetVisibility.resourcePlan && (
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Resource Plan — FTE by Role &amp; Team
@@ -974,7 +1018,6 @@ export function EffortEstimateStep({
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-white dark:bg-gray-900">
                     <tr className="border-b border-border text-xs text-muted-foreground">
-                      <th className="px-3 py-2 text-left font-medium">Phase</th>
                       <th className="px-3 py-2 text-left font-medium">Activity</th>
                       <th className="px-3 py-2 text-left font-medium">Role</th>
                       <th className="px-3 py-2 text-right font-medium">Effort Hrs</th>
@@ -983,22 +1026,38 @@ export function EffortEstimateStep({
                     </tr>
                   </thead>
                   <tbody>
-                    {roleHourEntries.map((e, i) => (
-                      <tr key={`${e.phaseKey}-${e.role}-${e.activity}-${i}`} className="border-b border-border">
-                        <td className="px-3 py-2 text-primary">{e.phaseLabel}</td>
-                        <td className="px-3 py-2 text-foreground">{e.activity}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{e.role}</td>
-                        <td className="px-3 py-2 text-right font-medium tabular-nums text-foreground">
-                          {e.hours.toFixed(2)}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-primary">
-                          {ceilToHalf(e.hours / e.capacity)}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-primary">
-                          {e.sourceItems}
-                        </td>
-                      </tr>
-                    ))}
+                    {rows.map((phase) => {
+                      const entries = roleHourEntries.filter((e) => e.phaseKey === phase.key);
+                      if (entries.length === 0) return null;
+                      const phaseTotal = entries.reduce((sum, e) => sum + e.hours, 0);
+                      return (
+                        <Fragment key={phase.key}>
+                          <tr className="border-b border-border bg-muted/50">
+                            <td colSpan={4} className="px-3 py-1.5 text-xs font-semibold text-primary">
+                              {phase.label}
+                            </td>
+                            <td className="px-3 py-1.5 text-right text-xs font-semibold tabular-nums text-primary">
+                              {phaseTotal.toFixed(2)}
+                            </td>
+                          </tr>
+                          {entries.map((e, i) => (
+                            <tr key={`${e.phaseKey}-${e.role}-${e.activity}-${i}`} className="border-b border-border">
+                              <td className="px-3 py-2 pl-6 text-foreground">{e.activity}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{e.role}</td>
+                              <td className="px-3 py-2 text-right font-medium tabular-nums text-foreground">
+                                {e.hours.toFixed(2)}
+                              </td>
+                              <td className="px-3 py-2 text-right tabular-nums text-primary">
+                                {ceilToHalf(e.hours / e.capacity)}
+                              </td>
+                              <td className="px-3 py-2 text-right tabular-nums text-primary">
+                                {e.sourceItems}
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1260,14 +1319,14 @@ export function EffortEstimateStep({
             <div className="mt-1.5 overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+                  <tr className="bg-gray-100 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     <th className="px-3 py-2 text-left font-medium">Team</th>
                     <th className="px-3 py-2 text-left font-medium">Role</th>
                     {rows.map((r) => (
                       <th key={r.key} className="px-3 py-2 text-right font-medium">
                         {r.label.replace(/^\d+\.\s*/, "")}
                         <br />
-                        <span className="font-normal">
+                        <span className="font-normal opacity-80">
                           Wk{r.start.toFixed(0)}-{r.end.toFixed(0)}
                         </span>
                       </th>
@@ -1280,7 +1339,15 @@ export function EffortEstimateStep({
                       <td className="px-3 py-2.5 text-muted-foreground">{r.team}</td>
                       <td className="px-3 py-2.5 font-medium text-foreground">{r.role}</td>
                       {r.cells.map((v, i) => (
-                        <td key={i} className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                        <td
+                          key={i}
+                          className={cn(
+                            "px-3 py-2.5 text-right tabular-nums font-medium",
+                            v > 0
+                              ? FTE_HEATMAP_COLUMN_CLASSES[i % FTE_HEATMAP_COLUMN_CLASSES.length]
+                              : "text-muted-foreground/40"
+                          )}
+                        >
                           {v > 0 ? v : "–"}
                         </td>
                       ))}
@@ -1290,8 +1357,10 @@ export function EffortEstimateStep({
               </table>
             </div>
           </div>
+          )}
 
-          <div className="border-t border-border pt-6">
+          {widgetVisibility.assumptions && (
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Assumptions &amp; Defaults ({assumptions.length})
@@ -1327,11 +1396,12 @@ export function EffortEstimateStep({
               </div>
             )}
           </div>
+          )}
         </>
       )}
 
       {mode === "ml" && (
-        <div className="border-t border-border pt-6">
+        <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               ML Prediction Report · {ML_MODEL_VERSION} · {ML_PROJECT_COUNT} projects
@@ -1802,8 +1872,496 @@ export function EffortEstimateStep({
         </div>
       )}
 
+      {mode === "agent" && (
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Agent Impact Report · illustrative model · derived from this estimate&rsquo;s
+              Formula (KDM) hours
+            </p>
+            <Button type="button" variant="outline" size="sm">
+              Export Excel
+            </Button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <Card className="gap-1 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/0 py-5 ring-primary/20">
+              <CardHeader className="gap-1 px-4">
+                <CardDescription className="text-xs font-semibold tracking-wide text-primary/80 uppercase">
+                  Man-Hours Saved
+                </CardDescription>
+                <CardTitle className="text-3xl font-bold tabular-nums text-primary">
+                  {fmt(agentTotalHoursSaved)}
+                  <span className="ml-1 text-base font-medium text-primary/70">hrs</span>
+                </CardTitle>
+              </CardHeader>
+              <p className="px-4 text-xs text-muted-foreground">
+                {agentSavedPct.toFixed(1)}% of {fmt(totalEffort)} hrs (0-agent)
+              </p>
+            </Card>
+            <Card className="gap-1 py-4">
+              <CardHeader className="gap-1 px-4">
+                <CardDescription className="text-xs font-medium tracking-wide uppercase">
+                  Activities Automatable
+                </CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums">
+                  {agentAutomatableCount} / {agentActivityRows.length}
+                </CardTitle>
+              </CardHeader>
+              <p className="px-4 text-xs text-muted-foreground">
+                ≥{Math.round(AGENT_AUTOMATABLE_THRESHOLD * 100)}% automation coverage
+              </p>
+            </Card>
+            <Card className="gap-1 py-4">
+              <CardHeader className="gap-1 px-4">
+                <CardDescription className="text-xs font-medium tracking-wide uppercase">
+                  Duration — 0-Agent vs Agent
+                </CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums">
+                  {agentDurationZeroWeeks}w → {agentDurationWithAgentWeeks}w
+                </CardTitle>
+              </CardHeader>
+              <p className="px-4 text-xs text-muted-foreground">
+                {agentWeeksSaved.toFixed(1)} weeks saved
+              </p>
+            </Card>
+            <Card className="gap-1 py-4">
+              <CardHeader className="gap-1 px-4">
+                <CardDescription className="text-xs font-medium tracking-wide uppercase">
+                  GMPE Uplift
+                </CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                  +{agentGmpeUpliftPts.toFixed(1)} pts
+                </CardTitle>
+              </CardHeader>
+              <p className="px-4 text-xs text-muted-foreground">
+                {agentGmpeZeroAgentPct.toFixed(1)}% → {agentGmpeWithAgentPct.toFixed(1)}%
+              </p>
+            </Card>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-card-foreground">
+                Agent vs 0-Agent — Compare View
+              </h3>
+              <FieldHelp text="Every question this tab answers, side by side: man-hours, automation, tokens/cost, schedule, and GMPE for the Agent scenario vs a fully-manual 0-Agent scenario." />
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Agent scenario applies the automation, realization, and cost assumptions from this
+              tab on top of the Formula (KDM) baseline.
+            </p>
+
+            <div className="mt-3 overflow-x-auto rounded-xl border border-border">
+              <div
+                className="grid min-w-[560px]"
+                style={{ gridTemplateColumns: "1fr 190px 190px" }}
+              >
+                <div className="border-b border-border bg-muted/40 px-3 py-3" />
+                <div className="border-b border-x border-emerald-300 bg-emerald-50/70 px-3 py-3 text-center dark:border-emerald-800 dark:bg-emerald-950/25">
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                    Agent Scenario
+                  </p>
+                  <p className="text-[11px] text-emerald-700/70 dark:text-emerald-400/70">
+                    With AI agents in the loop
+                  </p>
+                </div>
+                <div className="border-b border-border bg-muted/40 px-3 py-3 text-center">
+                  <p className="text-sm font-semibold text-foreground">0-Agent Scenario</p>
+                  <p className="text-[11px] text-muted-foreground">Fully manual delivery</p>
+                </div>
+
+                {[
+                  {
+                    title: "Effort & Hours",
+                    rows: [
+                      {
+                        label: "Total Man-Hours",
+                        agent: `${fmt(agentTotalHoursWithAgent)} hrs`,
+                        manual: `${fmt(totalEffort)} hrs`,
+                      },
+                      {
+                        label: "Man-Hours Saved (by work)",
+                        agent: `${fmt(agentTotalHoursSaved)} hrs`,
+                        manual: "0 hrs",
+                      },
+                    ],
+                  },
+                  {
+                    title: "Automation",
+                    rows: [
+                      {
+                        label: "Activities Automatable",
+                        agent: `${agentAutomatableCount} / ${agentActivityRows.length}`,
+                        manual: `0 / ${agentActivityRows.length}`,
+                      },
+                      {
+                        label: "Approx Tokens (total)",
+                        agent: fmt(agentTotalTokens),
+                        manual: "—",
+                      },
+                      {
+                        label: "Approx Cost (total)",
+                        agent: `$${agentTotalCost.toFixed(2)}`,
+                        manual: "$0.00",
+                      },
+                    ],
+                  },
+                  {
+                    title: "Schedule",
+                    rows: [
+                      {
+                        label: "Project Duration",
+                        agent: `${agentDurationWithAgentWeeks} wks`,
+                        manual: `${agentDurationZeroWeeks} wks`,
+                      },
+                      {
+                        label: "Weeks Saved",
+                        agent: `${agentWeeksSaved.toFixed(1)} wks`,
+                        manual: "—",
+                      },
+                    ],
+                  },
+                  {
+                    title: "Margin",
+                    rows: [
+                      {
+                        label: "GMPE",
+                        agent: `${agentGmpeWithAgentPct.toFixed(1)}%`,
+                        manual: `${agentGmpeZeroAgentPct.toFixed(1)}%`,
+                      },
+                      {
+                        label: "GMPE Uplift",
+                        agent: `+${agentGmpeUpliftPts.toFixed(1)} pts`,
+                        manual: "—",
+                      },
+                    ],
+                  },
+                ].map((category) => (
+                  <div key={category.title} className="contents">
+                    <div className="col-span-3 border-b border-border bg-muted/20 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                      {category.title}
+                    </div>
+                    {category.rows.map((row) => (
+                      <div key={row.label} className="contents">
+                        <div className="border-b border-border bg-white px-3 py-2.5 text-sm text-foreground dark:bg-gray-900">
+                          {row.label}
+                        </div>
+                        <div className="border-b border-x border-emerald-200 bg-emerald-50/30 px-3 py-2.5 text-center text-sm font-semibold tabular-nums text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/15 dark:text-emerald-400">
+                          {row.agent}
+                        </div>
+                        <div className="border-b border-border bg-white px-3 py-2.5 text-center text-sm tabular-nums text-muted-foreground dark:bg-gray-900">
+                          {row.manual}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border p-4">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-card-foreground">
+                Man-Hours by Goal — 0-Agent Scenario
+              </h3>
+              <FieldHelp text="Total man-hours needed per SAP Activate phase (goal) if no agent automation is applied — same totals as the Formula (KDM) estimate." />
+            </div>
+            <div className="mt-3 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+                    <th className="px-3 py-2 text-left font-medium">Goal (Phase)</th>
+                    <th className="px-3 py-2 text-left font-medium">Share</th>
+                    <th className="px-3 py-2 text-right font-medium">Man-Hours</th>
+                    <th className="px-3 py-2 text-right font-medium">% of Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agentGoalRows.map((row) => (
+                    <tr key={row.key} className="border-b border-border">
+                      <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                      <td className="px-3 py-2.5">
+                        <span className="h-2 w-32 overflow-hidden rounded-full bg-muted inline-block align-middle">
+                          <span
+                            className="block h-full rounded-full bg-primary"
+                            style={{ width: `${(row.hoursZeroAgent / maxAgentGoalHrs) * 100}%` }}
+                          />
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-medium tabular-nums text-foreground">
+                        {fmt(row.hoursZeroAgent)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                        {row.pctOfTotal.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-emerald-50/50 dark:bg-emerald-950/20">
+                    <td className="px-3 py-2.5 font-semibold text-foreground">Total</td>
+                    <td className="px-3 py-2.5" />
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                      {fmt(totalEffort)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                      100%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border p-4">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-card-foreground">
+                Agent Compare View — Automation, Tokens &amp; Cost
+              </h3>
+              <FieldHelp text="Automation % = share of that activity's hours an agent can take on. Hours saved factors in a 65% realization rate for human review. Tokens/cost are per-agent approximations, not the whole project." />
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              How many activities can be automated · approx tokens &amp; cost per agent · hours
+              saved per activity
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-foreground">
+              <CheckCircle weight="fill" className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              Selected {agentAutomatableCount} of {agentActivityRows.length} automatable
+            </div>
+
+            <div className="mt-2 overflow-x-auto rounded-xl border border-border bg-card">
+              <div
+                className="grid min-w-[860px] divide-x divide-border"
+                style={{ gridTemplateColumns: "260px repeat(4, minmax(150px, 1fr))" }}
+              >
+                <div className="flex items-center gap-1.5 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase">
+                  Activity / Agent
+                </div>
+                {["Automation %", "Hrs Saved", "Approx Tokens", "Approx Cost"].map((label) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between gap-1.5 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <DotsSixVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                      {label}
+                    </span>
+                    <DotsThree className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                  </div>
+                ))}
+
+                {agentActivityRows.map((row) => {
+                  const automatable = row.automationPct >= AGENT_AUTOMATABLE_THRESHOLD;
+                  return (
+                    <div key={row.key} className="contents">
+                      <div className="flex flex-col gap-1.5 border-b border-border px-3 py-3">
+                        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <CheckCircle
+                            weight="fill"
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              automatable ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/40"
+                            )}
+                          />
+                          {row.activity}
+                        </span>
+                        <span className="flex flex-wrap gap-1">
+                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            {row.phaseLabel}
+                          </span>
+                          {automatable && (
+                            <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                              Automatable
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">{row.rationale}</span>
+                      </div>
+
+                      <div className="flex flex-col justify-center gap-1.5 border-b border-border px-3 py-3">
+                        <span className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                          <span
+                            className="block h-full rounded-full bg-primary"
+                            style={{ width: `${row.automationPct * 100}%` }}
+                          />
+                        </span>
+                        <span className="text-sm font-semibold tabular-nums text-foreground">
+                          {(row.automationPct * 100).toFixed(0)}%
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col justify-center border-b border-border px-3 py-3">
+                        <span
+                          className={cn(
+                            "inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                            row.hoursSaved > 0
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                              : "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {row.hoursSaved > 0 ? <TrendUp className="h-3 w-3" /> : null}
+                          {fmt(row.hoursSaved)} hrs
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col justify-center border-b border-border px-3 py-3">
+                        <span className="text-sm font-medium tabular-nums text-foreground">
+                          {fmt(row.tokens)}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col justify-center border-b border-border px-3 py-3">
+                        <span className="inline-flex w-fit items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-foreground">
+                          ${row.cost.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="flex items-center bg-emerald-50/50 px-3 py-3 text-xs font-semibold text-foreground dark:bg-emerald-950/20">
+                  Total ({agentAutomatableCount} of {agentActivityRows.length} automatable)
+                </div>
+                <div className="flex items-center bg-emerald-50/50 px-3 py-3 dark:bg-emerald-950/20" />
+                <div className="flex items-center bg-emerald-50/50 px-3 py-3 dark:bg-emerald-950/20">
+                  <span className="text-sm font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    {fmt(agentTotalHoursSaved)} hrs
+                  </span>
+                </div>
+                <div className="flex items-center bg-emerald-50/50 px-3 py-3 dark:bg-emerald-950/20">
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {fmt(agentTotalTokens)}
+                  </span>
+                </div>
+                <div className="flex items-center bg-emerald-50/50 px-3 py-3 dark:bg-emerald-950/20">
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    ${agentTotalCost.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Blended token cost assumption: ${AGENT_BLENDED_COST_PER_MTOK}/1M tokens · realization
+              rate {Math.round(AGENT_REALIZATION * 100)}%.
+            </p>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border p-4">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-card-foreground">
+                Man-Hours Saved — Grouped by Work
+              </h3>
+              <FieldHelp text="Same activity rolled up across every phase it appears in, e.g. GSI Delivery Work spans Explore + Realize + Deploy." />
+            </div>
+            <div className="mt-3 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+                    <th className="px-3 py-2 text-left font-medium">Work</th>
+                    <th className="px-3 py-2 text-right font-medium">Hrs (0-Agent)</th>
+                    <th className="px-3 py-2 text-right font-medium">Hrs Saved</th>
+                    <th className="px-3 py-2 text-right font-medium">Hrs (With Agent)</th>
+                    <th className="px-3 py-2 text-right font-medium">% Reduction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agentWorkGroupRows.map((row) => (
+                    <tr key={row.activity} className="border-b border-border">
+                      <td className="px-3 py-2.5 font-medium text-foreground">{row.activity}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                        {fmt(row.hoursZeroAgent)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {fmt(row.hoursSaved)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                        {fmt(row.hoursWithAgent)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                        {row.pctReduction.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-emerald-50/50 dark:bg-emerald-950/20">
+                    <td className="px-3 py-2.5 font-semibold text-foreground">Total</td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                      {fmt(totalEffort)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                      {fmt(agentTotalHoursSaved)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                      {fmt(agentTotalHoursWithAgent)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                      {agentSavedPct.toFixed(1)}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Project Duration
+              </p>
+              <div className="mt-2 flex items-end gap-4">
+                <div>
+                  <p className="text-[11px] text-muted-foreground">0-Agent Scenario</p>
+                  <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    {agentDurationZeroWeeks}
+                    <span className="ml-1 text-sm font-medium text-muted-foreground">wks</span>
+                  </p>
+                </div>
+                <ArrowRight className="mb-1 h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Agent Scenario</p>
+                  <p className="text-2xl font-semibold tabular-nums text-primary">
+                    {agentDurationWithAgentWeeks}
+                    <span className="ml-1 text-sm font-medium text-primary/70">wks</span>
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Duration scales with remaining man-hours after agent automation, floored at{" "}
+                {Math.round(AGENT_DURATION_FLOOR_PCT * 100)}% of the baseline schedule (reviews and
+                dependencies still take calendar time).
+              </p>
+            </div>
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                GMPE Impact
+              </p>
+              <div className="mt-2 flex items-end gap-4">
+                <div>
+                  <p className="text-[11px] text-muted-foreground">0-Agent GMPE</p>
+                  <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    {agentGmpeZeroAgentPct.toFixed(1)}%
+                  </p>
+                </div>
+                <ArrowRight className="mb-1 h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Agent GMPE</p>
+                  <p className="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                    {agentGmpeWithAgentPct.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                GMPE = Gross Margin per Engagement = (revenue − cost) / revenue, at a fixed-price
+                basis of ${AGENT_BILL_RATE_PER_HR}/hr billed and ${AGENT_LABOR_COST_PER_HR}/hr
+                labor cost. Agent cost (${agentTotalCost.toFixed(2)}) is netted against labor hours
+                saved.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {mode === "compare" && (
-        <div className="border-t border-border pt-6">
+        <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
           <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300">
             Side-by-side comparison · Formula (KDM) vs ML Prediction
           </p>
@@ -1836,16 +2394,16 @@ export function EffortEstimateStep({
                   One reproducible estimate based on the formula inputs and active master data.
                 </p>
               </div>
-              <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-4 dark:border-rose-900 dark:bg-rose-950/20">
+              <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-4 dark:border-cyan-900 dark:bg-cyan-950/20">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-rose-700 uppercase dark:text-rose-400">
+                  <p className="text-xs font-semibold text-cyan-700 uppercase dark:text-cyan-400">
                     ML Prediction
                   </p>
                   <Badge className="rounded-md border-amber-200 bg-amber-50 px-1.5 text-[10px] text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400">
                     {ML_CONFIDENCE}% confidence · MEDIUM
                   </Badge>
                 </div>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-rose-700 dark:text-rose-400">
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-cyan-700 dark:text-cyan-400">
                   {fmt(mlP50)} hrs
                 </p>
                 <p className="text-xs text-muted-foreground">P50 most-likely prediction</p>
@@ -1873,8 +2431,16 @@ export function EffortEstimateStep({
             {(() => {
               const diff = mlP50 - totalEffort;
               const pct = totalEffort > 0 ? (diff / totalEffort) * 100 : 0;
+              const worse = pct >= 0; // more predicted effort = costlier
               return (
-                <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-400">
+                <p
+                  className={cn(
+                    "mt-3 rounded-md border px-3 py-2 text-sm",
+                    worse
+                      ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-400"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                  )}
+                >
                   <span className="font-semibold">
                     ML P50 is {pct >= 0 ? "+" : ""}
                     {pct.toFixed(1)}% {pct >= 0 ? "higher" : "lower"} than Formula
@@ -1885,58 +2451,129 @@ export function EffortEstimateStep({
             })()}
 
             <p className="mt-4 text-xs font-semibold text-foreground uppercase">KPI Comparison</p>
-            <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[
-                {
-                  label: "Person-Days",
-                  formula: personDays,
-                  ml: mlPersonDaysP50,
-                  digits: 0,
-                  suffix: " pd",
-                },
-                {
-                  label: "Duration",
-                  formula: durationWeeks,
-                  ml: mlWeeksP50,
-                  digits: 1,
-                  suffix: " weeks",
-                },
-                {
-                  label: "Peak Team Size",
-                  formula: peakFte,
-                  ml: mlPeakTeamP50,
-                  digits: 1,
-                  suffix: " FTE",
-                },
-              ].map((kpi) => {
-                const pct = kpi.formula > 0 ? ((kpi.ml - kpi.formula) / kpi.formula) * 100 : 0;
-                return (
-                  <div key={kpi.label} className="rounded-lg border border-border p-4">
-                    <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      {kpi.label}
-                    </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">Formula</p>
-                        <p className="text-sm font-semibold tabular-nums text-foreground">
-                          {kpi.formula.toFixed(kpi.digits)}
-                          {kpi.suffix}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-muted-foreground">ML P50</p>
-                        <p className="text-sm font-semibold tabular-nums text-rose-600 dark:text-rose-400">
-                          {kpi.ml.toFixed(kpi.digits)}
-                          {kpi.suffix}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex justify-center">
-                      <DeltaBadge pct={pct} invert />
-                    </div>
+            <div className="mt-1.5 overflow-x-auto rounded-xl border border-border bg-card">
+              <div
+                className="grid min-w-[760px] divide-x divide-border"
+                style={{ gridTemplateColumns: "200px repeat(4, minmax(150px, 1fr))" }}
+              >
+                <div className="flex items-center gap-1.5 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase">
+                  Scenario
+                </div>
+                {[
+                  { label: "Effort" },
+                  { label: "Person-Days" },
+                  { label: "Duration" },
+                  { label: "Peak Team" },
+                ].map((col) => (
+                  <div
+                    key={col.label}
+                    className="flex items-center justify-between gap-1.5 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <DotsSixVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                      {col.label}
+                    </span>
+                    <DotsThree className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
                   </div>
-                );
-              })}
+                ))}
+
+                {[
+                  {
+                    key: "formula",
+                    name: "Formula (KDM)",
+                    tags: ["Deterministic", "Baseline"],
+                    effort: totalEffort,
+                    personDays,
+                    duration: durationWeeks,
+                    peakTeam: peakFte,
+                  },
+                  {
+                    key: "ml",
+                    name: "ML Prediction",
+                    tags: [`${ML_CONFIDENCE}% conf`, "P50"],
+                    effort: mlP50,
+                    personDays: mlPersonDaysP50,
+                    duration: mlWeeksP50,
+                    peakTeam: mlPeakTeamP50,
+                  },
+                ].map((scenario) => {
+                  const metrics = [
+                    { key: "effort", value: scenario.effort, digits: 0, suffix: " hrs" },
+                    { key: "personDays", value: scenario.personDays, digits: 0, suffix: " pd" },
+                    { key: "duration", value: scenario.duration, digits: 1, suffix: " wks" },
+                    { key: "peakTeam", value: scenario.peakTeam, digits: 1, suffix: " FTE" },
+                  ];
+                  return (
+                    <div key={scenario.key} className="contents">
+                      <div className="flex flex-col gap-1.5 border-b border-border px-3 py-3 last:border-b-0">
+                        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <CheckCircle
+                            weight="fill"
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              scenario.key === "formula" ? "text-primary" : "text-cyan-500"
+                            )}
+                          />
+                          {scenario.name}
+                        </span>
+                        <span className="flex flex-wrap gap-1">
+                          {scenario.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className={cn(
+                                "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                                scenario.key === "formula"
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
+                              )}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                      {metrics.map((m) => {
+                        const baseline = { effort: totalEffort, personDays, duration: durationWeeks, peakTeam: peakFte }[
+                          m.key as "effort" | "personDays" | "duration" | "peakTeam"
+                        ];
+                        const pct = baseline > 0 ? ((m.value - baseline) / baseline) * 100 : 0;
+                        const showDelta = scenario.key !== "formula";
+                        return (
+                          <div
+                            key={m.key}
+                            className="flex flex-col justify-center gap-1 border-b border-border px-3 py-3 last:border-b-0"
+                          >
+                            <span className="text-sm font-semibold tabular-nums text-foreground">
+                              {m.value.toFixed(m.digits)}
+                              {m.suffix}
+                            </span>
+                            {showDelta && (
+                              <span
+                                className={cn(
+                                  "inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                                  Math.abs(pct) < 0.5
+                                    ? "bg-muted text-muted-foreground"
+                                    : pct > 0
+                                      ? "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
+                                      : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                                )}
+                              >
+                                {pct > 0 ? (
+                                  <TrendUp className="h-3 w-3" />
+                                ) : (
+                                  <TrendDown className="h-3 w-3" />
+                                )}
+                                {pct > 0 ? "+" : ""}
+                                {pct.toFixed(1)}% vs Formula
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <p className="mt-4 text-xs font-semibold text-foreground uppercase">
@@ -2117,6 +2754,13 @@ export function EffortEstimateStep({
           </div>
         </div>
       )}
+
+      <WidgetCustomizeSheet
+        open={widgetsOpen}
+        onOpenChange={setWidgetsOpen}
+        visibility={widgetVisibility}
+        onVisibilityChange={setWidgetVisibility}
+      />
     </div>
   );
 }

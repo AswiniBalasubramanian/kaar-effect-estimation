@@ -1,19 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sparkle } from "@phosphor-icons/react";
+import { MagnifyingGlass as Search, Sparkle } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { BreadcrumbTrail } from "@/components/breadcrumb-trail";
+import { GlobalSearchDialog } from "@/components/global-search-dialog";
 import { useTopBarContent } from "@/lib/top-bar-context";
 import { useAssistant } from "@/lib/assistant-context";
 
 export function TopBar() {
   const { crumbs } = useTopBarContent();
   const { toggle } = useAssistant();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 overflow-hidden border-b border-sidebar-border bg-gradient-to-r from-white via-white to-gray-100 relative dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
@@ -53,7 +67,16 @@ export function TopBar() {
         </>
       )}
 
-      <div className="ml-auto flex h-12 shrink-0 items-center pr-3">
+      <div className="ml-auto flex h-12 shrink-0 items-center gap-2 pr-3">
+        <button
+          type="button"
+          aria-label="Search projects and pages"
+          onClick={() => setSearchOpen(true)}
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:bg-gray-900"
+        >
+          <Search className="h-4 w-4" />
+          <span className="hidden text-xs text-muted-foreground sm:inline">⌘K</span>
+        </button>
         <Button
           type="button"
           variant="secondary"
@@ -65,6 +88,8 @@ export function TopBar() {
           Assistant
         </Button>
       </div>
+
+      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }

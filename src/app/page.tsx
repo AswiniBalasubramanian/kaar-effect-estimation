@@ -8,8 +8,7 @@ import {
   FolderOpen,
   Table as TableIcon,
   SquaresFour,
-  Funnel,
-  SlidersHorizontal,
+  Kanban,
 } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
@@ -22,6 +21,19 @@ import { ProjectCard } from "@/components/project-card";
 import { ProjectsTable } from "@/components/projects-table";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  EMPTY_PROJECT_FILTERS,
+  ProjectFilterPopover,
+  filterProjects,
+  type AdvancedFilterRule,
+  type ProjectFilters,
+} from "@/components/project-filter-popover";
+import {
+  ColumnCustomizeSheet,
+  DEFAULT_COLUMN_VISIBILITY,
+  type ProjectColumnVisibility,
+} from "@/components/column-customize-sheet";
+import { WelcomeSplash } from "@/components/welcome-splash";
 import { useProjects } from "@/lib/projects-context";
 import { useSetTopBar } from "@/lib/top-bar-context";
 
@@ -39,9 +51,22 @@ export default function ProjectsPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [view, setView] = useState<ProjectsView>("table");
+  const [filters, setFilters] = useState<ProjectFilters>(EMPTY_PROJECT_FILTERS);
+  const [advancedRules, setAdvancedRules] = useState<AdvancedFilterRule[]>([]);
+  const [columnVisibility, setColumnVisibility] = useState<ProjectColumnVisibility>(
+    DEFAULT_COLUMN_VISIBILITY
+  );
+  const [fieldsOpen, setFieldsOpen] = useState(false);
 
   const crumbs = useMemo(() => [{ label: "Projects" }], []);
   useSetTopBar(crumbs);
+
+  const visibleProjects = useMemo(
+    () => filterProjects(filteredProjects, filters, advancedRules),
+    [filteredProjects, filters, advancedRules]
+  );
+  const activeFilterCount =
+    filters.status.length + filters.type.length + filters.region.length + advancedRules.length;
 
   return (
     <SidebarInset>
@@ -60,7 +85,7 @@ export default function ProjectsPage() {
           <span className="inline-flex items-center gap-2">
             Projects
             <Badge variant="secondary" className="rounded-full px-2 font-medium">
-              {filteredProjects.length}
+              {visibleProjects.length}
             </Badge>
           </span>
         }
@@ -126,26 +151,32 @@ export default function ProjectsPage() {
                 <TooltipContent side="top">Card view</TooltipContent>
               </Tooltip>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Filter projects"
-                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Funnel className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top">Filter</TooltipContent>
-            </Tooltip>
+            <ProjectFilterPopover
+              projects={filteredProjects}
+              shownCount={visibleProjects.length}
+              totalCount={filteredProjects.length}
+              filters={filters}
+              advancedRules={advancedRules}
+              activeCount={activeFilterCount}
+              onApply={(nextFilters, nextRules) => {
+                setFilters(nextFilters);
+                setAdvancedRules(nextRules);
+              }}
+              onClear={() => {
+                setFilters(EMPTY_PROJECT_FILTERS);
+                setAdvancedRules([]);
+              }}
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   aria-label="Customize columns"
+                  aria-expanded={fieldsOpen}
+                  onClick={() => setFieldsOpen(true)}
                   className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
+                  <Kanban className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top">Customize columns</TooltipContent>
@@ -163,16 +194,17 @@ export default function ProjectsPage() {
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50">
         <div className="mx-auto w-full max-w-[1400px] px-2 py-6 sm:px-3 sm:py-8">
-          {filteredProjects.length > 0 ? (
+          {visibleProjects.length > 0 ? (
             view === "table" ? (
               <ProjectsTable
-                projects={filteredProjects}
+                projects={visibleProjects}
                 onClone={cloneProject}
                 onDelete={deleteProject}
+                columnVisibility={columnVisibility}
               />
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredProjects.map((project) => (
+                {visibleProjects.map((project) => (
                   <ProjectCard
                     key={project.id}
                     project={project}
@@ -201,6 +233,15 @@ export default function ProjectsPage() {
         onOpenChange={setCreateOpen}
         onCreate={addProject}
       />
+
+      <ColumnCustomizeSheet
+        open={fieldsOpen}
+        onOpenChange={setFieldsOpen}
+        visibility={columnVisibility}
+        onVisibilityChange={setColumnVisibility}
+      />
+
+      <WelcomeSplash />
     </SidebarInset>
   );
 }

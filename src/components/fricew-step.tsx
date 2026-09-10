@@ -121,7 +121,7 @@ export function FricewStep({
               width={320}
               height={320}
               quality={100}
-              className="mt-2 h-auto w-1/2 object-contain"
+              className="mt-2 h-auto w-28 object-contain"
             />
             <p className="mt-2 text-sm font-semibold text-foreground">
               I have development effort
@@ -144,7 +144,7 @@ export function FricewStep({
               width={320}
               height={320}
               quality={100}
-              className="mt-2 h-auto w-1/2 object-contain"
+              className="mt-2 h-auto w-28 object-contain"
             />
             <p className="mt-2 text-sm font-semibold text-foreground">
               I don&rsquo;t have development effort

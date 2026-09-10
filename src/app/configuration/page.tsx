@@ -119,7 +119,7 @@ export default function ConfigurationPage() {
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-muted/25">
-        <div className="mx-auto w-full max-w-[1400px] px-2 pt-3 pb-6 sm:px-3 sm:pt-4 sm:pb-8">
+        <div className="mx-auto w-full max-w-[1600px] px-2 pt-3 pb-6 sm:px-3 sm:pt-4 sm:pb-8">
         <Tabs value={view} onValueChange={(v) => setView(v as "golden" | "configSets")}>
           <TabsList className="grid w-full grid-cols-2 sm:w-[360px]">
             <TabsTrigger value="golden">Golden Masters</TabsTrigger>
