@@ -125,7 +125,7 @@ export function ProjectCard({
           <Link
             href={`/projects/${project.id}`}
             aria-label={`Open ${project.name}`}
-            className="group shrink-0 text-muted-foreground transition-colors hover:text-primary"
+            className="group shrink-0 text-muted-foreground transition-colors hover:text-primary-text"
           >
             <ArrowRight
               aria-hidden="true"

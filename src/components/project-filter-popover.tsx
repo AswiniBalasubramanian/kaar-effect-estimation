@@ -196,7 +196,7 @@ export function ProjectFilterPopover({
           className={cn(
             "relative inline-flex h-9 shrink-0 items-center justify-center rounded-lg border px-2 transition-colors",
             activeCount > 0
-              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
+              ? "border-primary/40 bg-primary/10 text-primary-text hover:bg-primary/15"
               : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >
@@ -392,7 +392,7 @@ export function ProjectFilterPopover({
               <button
                 type="button"
                 onClick={() => setPendingRules((prev) => [...prev, makeRule()])}
-                className="mt-1 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                className="mt-1 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary-text hover:underline"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add filter rule
@@ -445,11 +445,11 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
-        selected ? "bg-primary/10 text-primary ring-1 ring-primary/30" : "text-foreground hover:bg-muted"
+        selected ? "bg-primary/10 text-primary-text ring-1 ring-primary/30" : "text-foreground hover:bg-muted"
       )}
     >
       <span className="flex min-w-0 items-center gap-1.5 truncate">{children}</span>
-      <span className={cn("shrink-0 text-[11px]", selected ? "text-primary/70" : "text-muted-foreground")}>
+      <span className={cn("shrink-0 text-[11px]", selected ? "text-primary-text/70" : "text-muted-foreground")}>
         {count}
       </span>
     </button>

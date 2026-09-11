@@ -245,7 +245,7 @@ export default function ConfigurationPage() {
                           {category.rowCount === 1 ? "" : "s"}
                         </span>
                       </h3>
-                      <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
+                      <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary-text">
                         View <ArrowRight className="h-3.5 w-3.5" />
                       </span>
                     </div>
@@ -296,7 +296,7 @@ export default function ConfigurationPage() {
                         Created {formatDate(set.createdAt)}{" "}
                         <Link
                           href={`/configuration/config-sets/${set.id}`}
-                          className="font-medium text-primary hover:underline"
+                          className="font-medium text-primary-text hover:underline"
                         >
                           here
                         </Link>

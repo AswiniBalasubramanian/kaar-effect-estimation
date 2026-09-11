@@ -348,7 +348,7 @@ export default function ProjectDetailPage({
                     <button
                       type="button"
                       onClick={() => setStatsExpanded(true)}
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="text-xs font-medium text-primary-text hover:underline"
                     >
                       View more
                     </button>
@@ -359,7 +359,7 @@ export default function ProjectDetailPage({
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium tracking-wide text-muted-foreground">
+                <Label htmlFor="projectStatus" className="text-xs font-medium tracking-wide text-muted-foreground">
                   Status
                 </Label>
                 <Select
@@ -368,7 +368,7 @@ export default function ProjectDetailPage({
                     updateProjectStatus(project.id, value as Project["status"])
                   }
                 >
-                  <SelectTrigger className="h-8 w-36">
+                  <SelectTrigger id="projectStatus" className="h-8 w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -441,7 +441,7 @@ export default function ProjectDetailPage({
               <button
                 type="button"
                 onClick={() => setStatsExpanded(false)}
-                className="text-sm font-medium text-primary hover:underline"
+                className="text-sm font-medium text-primary-text hover:underline"
               >
                 View less
               </button>
@@ -519,7 +519,7 @@ export default function ProjectDetailPage({
                             >
                               {circle}
                               {active && (
-                                <span className="[text-orientation:sideways] [writing-mode:vertical-rl] rotate-180 py-1 text-xs font-semibold whitespace-nowrap text-primary">
+                                <span className="[text-orientation:sideways] [writing-mode:vertical-rl] rotate-180 py-1 text-xs font-semibold whitespace-nowrap text-primary-text">
                                   {step.title}
                                 </span>
                               )}
@@ -553,7 +553,7 @@ export default function ProjectDetailPage({
               </ul>
             </nav>
 
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white py-6 pr-6 pl-6 dark:bg-gray-900">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white py-6 pr-6 pl-6 dark:bg-neutral-900">
               {activeStep === "profile-scope" ? (
                 <div className="flex flex-col gap-4">
               <div
@@ -604,10 +604,11 @@ export default function ProjectDetailPage({
                 <div className="mt-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="hqLocation" className="flex items-center gap-1.5 text-sm">
                         HQ Location
                       </Label>
                       <Input
+                        id="hqLocation"
                         value={hqLocation}
                         onChange={(e) => setHqLocation(e.target.value)}
                         placeholder="Enter headquarters"
@@ -616,10 +617,11 @@ export default function ProjectDetailPage({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="industry" className="flex items-center gap-1.5 text-sm">
                         Industry
                       </Label>
                       <Input
+                        id="industry"
                         value={industry}
                         onChange={(e) => setIndustry(e.target.value)}
                         placeholder="Enter industry"
@@ -629,10 +631,11 @@ export default function ProjectDetailPage({
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="goLiveDate" className="flex items-center gap-1.5 text-sm">
                         Go-Live Target
                       </Label>
                       <Input
+                        id="goLiveDate"
                         type="date"
                         value={goLiveDate}
                         onChange={(e) => setGoLiveDate(e.target.value)}
@@ -640,10 +643,11 @@ export default function ProjectDetailPage({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="durationWeeks" className="flex items-center gap-1.5 text-sm">
                         Duration (weeks)
                       </Label>
                       <Input
+                        id="durationWeeks"
                         type="number"
                         min={1}
                         value={durationWeeks}
@@ -653,10 +657,11 @@ export default function ProjectDetailPage({
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="hoursPerDay" className="flex items-center gap-1.5 text-sm">
                         Hours / Day
                       </Label>
                       <Input
+                        id="hoursPerDay"
                         type="number"
                         min={1}
                         max={24}
@@ -666,11 +671,11 @@ export default function ProjectDetailPage({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="trainingType" className="flex items-center gap-1.5 text-sm">
                         Training Type
                       </Label>
                       <Select value={trainingType} onValueChange={setTrainingType}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger id="trainingType" className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -683,10 +688,11 @@ export default function ProjectDetailPage({
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="maxPersonsPerTraining" className="flex items-center gap-1.5 text-sm">
                         Max Persons / Training
                       </Label>
                       <Input
+                        id="maxPersonsPerTraining"
                         type="number"
                         min={1}
                         value={maxPersonsPerTraining}
@@ -696,11 +702,12 @@ export default function ProjectDetailPage({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <Label className="flex items-center gap-1.5 text-sm">
+                      <Label htmlFor="swtCycles" className="flex items-center gap-1.5 text-sm">
                         SWT Cycles (1–3)
                         <FieldHelp text="Number of Solution Walkthrough cycles." />
                       </Label>
                       <Input
+                        id="swtCycles"
                         type="number"
                         min={1}
                         max={3}
@@ -742,7 +749,7 @@ export default function ProjectDetailPage({
                           className={cn(
                             "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
                             selected
-                              ? "border-primary bg-primary/10 text-primary"
+                              ? "border-primary bg-primary/10 text-primary-text"
                               : "border-transparent bg-muted text-foreground hover:bg-muted/70"
                           )}
                         >
@@ -797,7 +804,7 @@ export default function ProjectDetailPage({
                         const value = driverValues[factor.key] ?? "";
                         return (
                           <div key={factor.key} className="flex flex-col gap-1.5">
-                            <Label className="flex items-center gap-1.5 text-sm">
+                            <Label htmlFor={`driver-${factor.key}`} className="flex items-center gap-1.5 text-sm">
                               {factor.label}
                             </Label>
                             {meta.type === "select" ? (
@@ -805,7 +812,7 @@ export default function ProjectDetailPage({
                                 value={value || undefined}
                                 onValueChange={(v) => setDriverValue(factor.key, v)}
                               >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id={`driver-${factor.key}`} className="w-full">
                                   <SelectValue placeholder={meta.placeholder} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -816,6 +823,7 @@ export default function ProjectDetailPage({
                               </Select>
                             ) : (
                               <Input
+                                id={`driver-${factor.key}`}
                                 value={value}
                                 onChange={(e) => setDriverValue(factor.key, e.target.value)}
                                 placeholder={meta.placeholder}
@@ -934,7 +942,7 @@ export default function ProjectDetailPage({
                 <TableBody>
                   {displayedFactors.map((factor) => (
                     <TableRow key={factor.key}>
-                      <TableCell className="text-primary">{factor.label}</TableCell>
+                      <TableCell className="text-primary-text">{factor.label}</TableCell>
                       <TableCell className="text-muted-foreground italic">
                         {factor.value}
                       </TableCell>

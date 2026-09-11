@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { FileText, PaperPlaneTilt, Plus, Sparkle, X } from "@phosphor-icons/react";
+import { FileText, PaperPlaneTilt, Plus, X } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,9 +86,9 @@ export function AssistantDock() {
 
   return (
     <aside className="flex h-full w-full shrink-0 flex-col border-l border-border bg-background sm:w-96">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-gradient-to-l from-orange-100 to-white px-4 py-3 dark:from-orange-950/40 dark:to-neutral-900">
         <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Sparkle className="h-4 w-4 text-primary" />
+          <Image src="/ai-logo.svg" alt="" aria-hidden="true" width={16} height={16} className="h-4 w-4" />
           Assistant
         </span>
         <button
@@ -104,22 +104,26 @@ export function AssistantDock() {
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-            <Image
-              src="/devtime.png"
-              alt=""
+            <div
               aria-hidden="true"
-              width={320}
-              height={320}
-              quality={100}
-              className="mx-auto h-auto w-2/3"
+              className="mx-auto aspect-square w-2/3 bg-gradient-to-br from-orange-400 to-red-950 dark:bg-white dark:bg-none"
+              style={{
+                maskImage: "url(/assistant-illustration.png)",
+                maskSize: "contain",
+                maskRepeat: "no-repeat",
+                maskPosition: "center",
+                WebkitMaskImage: "url(/assistant-illustration.png)",
+                WebkitMaskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+              }}
             />
-            <p className="mt-2 font-medium text-foreground">I&rsquo;m your assistant for this Effort Estimator</p>
+            <p className="mt-2 font-medium text-foreground">Ask about steps, drivers, or formulas</p>
             <p className="mt-1">
-              Ask me anything about the steps, drivers, or formulas — no need to dig through the
-              glossary. For example:
+              Get a quick answer here, or explore the full Glossary for more detail. For example:
             </p>
             <ul className="mt-1.5 list-disc space-y-1 pl-4">
-              <li>Any of the five estimation steps</li>
+              <li>The five estimation steps</li>
               <li>Org-complexity drivers, like &ldquo;Legal Entities&rdquo;</li>
               <li>Formulas, like &ldquo;org multiplier&rdquo;</li>
               <li>Fields like &ldquo;SWT cycles&rdquo; or &ldquo;instance driver&rdquo;</li>
@@ -147,7 +151,7 @@ export function AssistantDock() {
             title={`I can see this page: ${pageLabel}`}
             className="group flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-xs font-medium text-foreground"
           >
-            <FileText className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <FileText className="h-3.5 w-3.5 shrink-0 text-primary-text" aria-hidden="true" />
             <span className="truncate">{pageLabel}</span>
             <button
               type="button"

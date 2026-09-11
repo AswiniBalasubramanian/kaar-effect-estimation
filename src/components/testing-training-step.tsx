@@ -192,7 +192,7 @@ export function TestingTrainingStep({
           </div>
           <p className="text-xs text-muted-foreground">
             FTG count = ceil({wricefObjects} / {wricefPerFtgNum}) ={" "}
-            <span className="font-medium tabular-nums text-primary">{ftgCount}</span>
+            <span className="font-medium tabular-nums text-primary-text">{ftgCount}</span>
           </p>
         </div>
       </ToggleRow>
@@ -205,7 +205,7 @@ export function TestingTrainingStep({
       >
         <p className="text-xs text-muted-foreground">
           Uses Step A&rsquo;s SWT Cycles value:{" "}
-          <span className="font-medium tabular-nums text-primary">{swtCyclesFromStepA}</span>
+          <span className="font-medium tabular-nums text-primary-text">{swtCyclesFromStepA}</span>
         </p>
       </ToggleRow>
 
@@ -254,7 +254,7 @@ export function TestingTrainingStep({
           </div>
           <p className="text-xs text-muted-foreground">
             OCM units = ceil({endUsers} / {usersPerUnitNum}) ={" "}
-            <span className="font-medium tabular-nums text-primary">{ocmUnits}</span>
+            <span className="font-medium tabular-nums text-primary-text">{ocmUnits}</span>
           </p>
         </div>
       </ToggleRow>
@@ -275,7 +275,7 @@ export function TestingTrainingStep({
         <div className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">
             Sessions = ceil({endUsers} / {maxPersonsPerTraining || "—"}) ={" "}
-            <span className="font-medium tabular-nums text-primary">{trainingSessions}</span>
+            <span className="font-medium tabular-nums text-primary-text">{trainingSessions}</span>
           </p>
           <label className="flex items-center gap-2 text-sm text-foreground">
             <input

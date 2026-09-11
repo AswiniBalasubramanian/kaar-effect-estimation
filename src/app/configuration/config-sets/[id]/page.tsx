@@ -167,7 +167,7 @@ export default function ConfigSetDetailPage({
                           {category.rowCount === 1 ? "" : "s"}
                         </span>
                       </h3>
-                      <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
+                      <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary-text">
                         Edit <ArrowRight className="h-3.5 w-3.5" />
                       </span>
                     </div>

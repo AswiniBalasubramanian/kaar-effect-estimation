@@ -160,14 +160,14 @@ export function WidgetCustomizeSheet({
             <div className="flex items-center justify-between px-2 pb-1.5">
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Effort Estimate Widgets{" "}
-                <span className="text-primary">
+                <span className="text-primary-text">
                   {visibleCount}/{ALL_WIDGETS.length}
                 </span>
               </p>
               <button
                 type="button"
                 onClick={() => onVisibilityChange(DEFAULT_WIDGET_VISIBILITY)}
-                className="text-xs font-medium text-primary hover:underline"
+                className="text-xs font-medium text-primary-text hover:underline"
               >
                 Reset
               </button>

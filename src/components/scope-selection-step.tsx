@@ -602,7 +602,7 @@ export function ScopeSelectionStep({
               </p>
             ) : (
               <Table containerClassName="overflow-x-visible">
-                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-gray-900">
+                <TableHeader className="sticky top-0 z-10 bg-white dark:bg-neutral-900">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-16">
                       <div className="flex items-center gap-2">
@@ -1059,7 +1059,7 @@ export function ScopeSelectionStep({
         {!cartCollapsed && (
         <div
           style={{ "--cart-width": `${cartWidth}px` } as CSSProperties}
-          className="fixed inset-y-12 right-0 z-30 w-full shrink-0 overflow-y-auto border-l border-border bg-white p-5 pl-6 shadow-xl dark:bg-gray-900 sm:w-[var(--cart-width)]"
+          className="fixed inset-y-12 right-0 z-30 w-full shrink-0 overflow-y-auto border-l border-border bg-white p-5 pl-6 shadow-xl dark:bg-neutral-900 sm:w-[var(--cart-width)]"
         >
           <div
             role="separator"
@@ -1314,8 +1314,9 @@ export function ScopeSelectionStep({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Module</Label>
+              <Label htmlFor="customModule">Module</Label>
               <Input
+                id="customModule"
                 value={customModule}
                 onChange={(e) => setCustomModule(e.target.value)}
                 placeholder="Enter module"
@@ -1324,12 +1325,12 @@ export function ScopeSelectionStep({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Complexity</Label>
+              <Label htmlFor="customComplexity">Complexity</Label>
               <Select
                 value={customComplexity}
                 onValueChange={(v) => setCustomComplexity(v as GsiComplexity)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="customComplexity" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1340,9 +1341,9 @@ export function ScopeSelectionStep({
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Level</Label>
+              <Label htmlFor="customLevel">Level</Label>
               <Select value={customLevel} onValueChange={(v) => setCustomLevel(v as GsiLevel)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="customLevel" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1356,12 +1357,12 @@ export function ScopeSelectionStep({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Instance Driver</Label>
+              <Label htmlFor="customInstanceDriver">Instance Driver</Label>
               <Select
                 value={customInstanceDriver}
                 onValueChange={(v) => setCustomInstanceDriver(v as InstanceDriver)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="customInstanceDriver" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1374,8 +1375,9 @@ export function ScopeSelectionStep({
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Instances</Label>
+              <Label htmlFor="customInstances">Instances</Label>
               <Input
+                id="customInstances"
                 type="number"
                 min={1}
                 value={customInstances}
@@ -1385,8 +1387,9 @@ export function ScopeSelectionStep({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Std Hrs</Label>
+              <Label htmlFor="customStdHrs">Std Hrs</Label>
               <Input
+                id="customStdHrs"
                 type="number"
                 min={0}
                 value={customStdHrs}

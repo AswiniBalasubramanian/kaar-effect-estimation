@@ -136,7 +136,7 @@ function renderBody(slug: string, readOnly: boolean) {
             <div key={f.key} className="rounded-lg border border-border p-4">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-medium text-foreground">{f.label}</span>
-                <span className="text-sm font-semibold text-primary tabular-nums">
+                <span className="text-sm font-semibold text-primary-text tabular-nums">
                   {f.value}
                 </span>
               </div>

@@ -197,7 +197,7 @@ export function DataTable<T extends { id: string }>({
                   className={cn(
                     "gap-1.5 rounded-full",
                     isActive &&
-                      "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
+                      "border-primary/40 bg-primary/5 text-primary-text hover:bg-primary/10 dark:bg-primary/10"
                   )}
                 >
                   {col.header}
@@ -220,7 +220,7 @@ export function DataTable<T extends { id: string }>({
                           return next;
                         })
                       }
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="text-xs font-medium text-primary-text hover:underline"
                     >
                       Reset
                     </button>
@@ -266,7 +266,7 @@ export function DataTable<T extends { id: string }>({
               className={cn(
                 "shrink-0",
                 isGrouped &&
-                  "border-primary/40 bg-primary/5 text-primary dark:bg-primary/10"
+                  "border-primary/40 bg-primary/5 text-primary-text dark:bg-primary/10"
               )}
             >
               <Stack className="h-3.5 w-3.5" />
@@ -292,7 +292,7 @@ export function DataTable<T extends { id: string }>({
                 className={cn(
                   "shrink-0 gap-1.5",
                   hiddenCount > 0 &&
-                    "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
+                    "border-primary/40 bg-primary/5 text-primary-text hover:bg-primary/10 dark:bg-primary/10"
                 )}
               >
                 <ColumnsIcon className="h-3.5 w-3.5" />

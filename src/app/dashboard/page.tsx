@@ -135,7 +135,7 @@ export default function DashboardPage() {
                         {row.field}
                       </TableCell>
                       <TableCell>{row.master}</TableCell>
-                      <TableCell className="font-medium text-primary">
+                      <TableCell className="font-medium text-primary-text">
                         {row.selected}
                       </TableCell>
                       <TableCell className="max-w-32 min-w-0 truncate text-muted-foreground">

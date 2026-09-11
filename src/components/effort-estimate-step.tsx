@@ -667,14 +667,14 @@ export function EffortEstimateStep({
             <Card className="gap-1 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/0 py-5 ring-primary/20 sm:col-span-1">
               <CardHeader className="gap-1 px-4">
                 <div className="flex items-center gap-1.5">
-                  <CardDescription className="text-xs font-semibold tracking-wide text-primary/80 uppercase">
+                  <CardDescription className="text-xs font-semibold tracking-wide text-primary-text/80 uppercase">
                     Total Effort
                   </CardDescription>
                   <FieldHelp text="Total Effort = sum of PMO hours + Delivery hours across all six phases." />
                 </div>
-                <CardTitle className="text-2xl font-semibold tabular-nums text-primary">
+                <CardTitle className="text-2xl font-semibold tabular-nums text-primary-text">
                   {fmt(totalEffort)}
-                  <span className="ml-1 text-sm font-medium text-primary/70">hrs</span>
+                  <span className="ml-1 text-sm font-medium text-primary-text/70">hrs</span>
                 </CardTitle>
               </CardHeader>
               <p className="px-4 text-xs text-muted-foreground">
@@ -712,7 +712,7 @@ export function EffortEstimateStep({
           </div>
 
           {widgetVisibility.effortByPhase && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">Effort by Phase</h2>
               <FieldHelp text="Bar length is based on total man-hours per phase (PMO in gray, Delivery colored per phase)." />
@@ -774,7 +774,7 @@ export function EffortEstimateStep({
           )}
 
           {widgetVisibility.moduleSummary && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Module Summary — Scope, Hours
@@ -813,7 +813,7 @@ export function EffortEstimateStep({
                       <tr key={m.module} className="border-b border-border">
                         <td className="px-3 py-2.5 font-medium text-foreground">{m.module}</td>
                         <td className="px-3 py-2.5 text-emerald-600 dark:text-emerald-400">Yes</td>
-                        <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                        <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                           {m.count}
                         </td>
                         <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
@@ -856,7 +856,7 @@ export function EffortEstimateStep({
           )}
 
           {widgetVisibility.executiveSummary && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Executive Summary — Phase Breakdown (man-hours)
@@ -879,7 +879,7 @@ export function EffortEstimateStep({
                     const pct = totalEffort > 0 ? (row.totalHrs / totalEffort) * 100 : 0;
                     return (
                       <tr key={row.key} className="border-b border-border">
-                        <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                        <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                         <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                           {row.pmoHrs.toFixed(2)}
                         </td>
@@ -927,7 +927,7 @@ export function EffortEstimateStep({
           )}
 
           {widgetVisibility.phaseTimeline && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Phase Timeline &amp; Schedule
@@ -968,7 +968,7 @@ export function EffortEstimateStep({
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.key} className="border-b border-border">
-                      <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                      <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                         {row.start.toFixed(1)}
                       </td>
@@ -987,7 +987,7 @@ export function EffortEstimateStep({
                       <td className="px-3 py-2.5 text-right font-medium tabular-nums text-foreground">
                         {row.totalHrs.toFixed(2)}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                      <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                         {row.peakFte}
                       </td>
                     </tr>
@@ -999,7 +999,7 @@ export function EffortEstimateStep({
           )}
 
           {widgetVisibility.resourcePlan && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Resource Plan — FTE by Role &amp; Team
@@ -1016,7 +1016,7 @@ export function EffortEstimateStep({
               </p>
               <div className="max-h-72 overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white dark:bg-gray-900">
+                  <thead className="sticky top-0 bg-white dark:bg-neutral-900">
                     <tr className="border-b border-border text-xs text-muted-foreground">
                       <th className="px-3 py-2 text-left font-medium">Activity</th>
                       <th className="px-3 py-2 text-left font-medium">Role</th>
@@ -1033,10 +1033,10 @@ export function EffortEstimateStep({
                       return (
                         <Fragment key={phase.key}>
                           <tr className="border-b border-border bg-muted/50">
-                            <td colSpan={4} className="px-3 py-1.5 text-xs font-semibold text-primary">
+                            <td colSpan={4} className="px-3 py-1.5 text-xs font-semibold text-primary-text">
                               {phase.label}
                             </td>
-                            <td className="px-3 py-1.5 text-right text-xs font-semibold tabular-nums text-primary">
+                            <td className="px-3 py-1.5 text-right text-xs font-semibold tabular-nums text-primary-text">
                               {phaseTotal.toFixed(2)}
                             </td>
                           </tr>
@@ -1047,10 +1047,10 @@ export function EffortEstimateStep({
                               <td className="px-3 py-2 text-right font-medium tabular-nums text-foreground">
                                 {e.hours.toFixed(2)}
                               </td>
-                              <td className="px-3 py-2 text-right tabular-nums text-primary">
+                              <td className="px-3 py-2 text-right tabular-nums text-primary-text">
                                 {ceilToHalf(e.hours / e.capacity)}
                               </td>
-                              <td className="px-3 py-2 text-right tabular-nums text-primary">
+                              <td className="px-3 py-2 text-right tabular-nums text-primary-text">
                                 {e.sourceItems}
                               </td>
                             </tr>
@@ -1095,7 +1095,7 @@ export function EffortEstimateStep({
                       <td className="px-3 py-2.5 text-right font-medium tabular-nums text-foreground">
                         {r.total.toFixed(2)}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-primary">{r.peak}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">{r.peak}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                         {r.pctDelivery.toFixed(0)}%
                       </td>
@@ -1140,7 +1140,7 @@ export function EffortEstimateStep({
                       <td className="px-3 py-2.5 text-right font-medium tabular-nums text-foreground">
                         {r.total.toFixed(2)}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-primary">{r.peak}</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">{r.peak}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1288,7 +1288,7 @@ export function EffortEstimateStep({
                       <tbody>
                         {predictionRows.map((row) => (
                           <tr key={row.key} className="border-b border-border">
-                            <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                            <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                             <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                               {row.totalHrs.toFixed(2)}
                             </td>
@@ -1298,7 +1298,7 @@ export function EffortEstimateStep({
                             <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                               {fmt(row.capacityPerson)}
                             </td>
-                            <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                            <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                               {row.phasePeakFte}
                             </td>
                           </tr>
@@ -1319,7 +1319,7 @@ export function EffortEstimateStep({
             <div className="mt-1.5 overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-100 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  <tr className="bg-gray-100 text-xs text-gray-600 dark:bg-neutral-800 dark:text-neutral-300">
                     <th className="px-3 py-2 text-left font-medium">Team</th>
                     <th className="px-3 py-2 text-left font-medium">Role</th>
                     {rows.map((r) => (
@@ -1360,7 +1360,7 @@ export function EffortEstimateStep({
           )}
 
           {widgetVisibility.assumptions && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-semibold text-card-foreground">
                 Assumptions &amp; Defaults ({assumptions.length})
@@ -1401,7 +1401,7 @@ export function EffortEstimateStep({
       )}
 
       {mode === "ml" && (
-        <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+        <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               ML Prediction Report · {ML_MODEL_VERSION} · {ML_PROJECT_COUNT} projects
@@ -1427,7 +1427,7 @@ export function EffortEstimateStep({
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Total Effort
                 </p>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-primary">
+                <p className="mt-1 text-xl font-semibold tabular-nums text-primary-text">
                   {fmt(mlP50)} mh
                 </p>
                 <p className="text-[11px] text-muted-foreground">{fmt(mlPersonDaysP50)} man-days</p>
@@ -1444,7 +1444,7 @@ export function EffortEstimateStep({
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Duration
                 </p>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-primary">
+                <p className="mt-1 text-xl font-semibold tabular-nums text-primary-text">
                   {mlWeeksP50} weeks
                 </p>
                 <div className="mt-1.5 flex gap-1">
@@ -1460,7 +1460,7 @@ export function EffortEstimateStep({
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Peak Team Size
                 </p>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-primary">
+                <p className="mt-1 text-xl font-semibold tabular-nums text-primary-text">
                   {mlPeakTeamP50.toFixed(1)} FTE
                 </p>
                 <p className="text-[11px] text-muted-foreground">{mlPeakTeamP50} persons</p>
@@ -1477,7 +1477,7 @@ export function EffortEstimateStep({
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Prediction Confidence
                 </p>
-                <p className="mt-1 text-xl font-semibold tabular-nums text-primary">
+                <p className="mt-1 text-xl font-semibold tabular-nums text-primary-text">
                   {ML_CONFIDENCE}%
                 </p>
                 <p className="text-[11px] text-muted-foreground">MEDIUM</p>
@@ -1567,7 +1567,7 @@ export function EffortEstimateStep({
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   P50 (Most Likely)
                 </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-primary">
+                <p className="mt-1 text-lg font-semibold tabular-nums text-primary-text">
                   {fmt(mlP50)} MH
                 </p>
                 <p className="text-[11px] text-muted-foreground">~{fmt(mlPersonDaysP50)} man-days</p>
@@ -1606,7 +1606,7 @@ export function EffortEstimateStep({
                 <tbody>
                   {mlPhaseRows.map((row) => (
                     <tr key={row.key} className="border-b border-border">
-                      <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                      <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
                         {(row.mlPct).toFixed(1)}%
                       </td>
@@ -1648,7 +1648,7 @@ export function EffortEstimateStep({
                 <tbody>
                   {mlPhaseRows.map((row) => (
                     <tr key={row.key} className="border-b border-border">
-                      <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                      <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600 dark:text-rose-400">
                         {fmt(row.gsiMh)}
                       </td>
@@ -1686,7 +1686,7 @@ export function EffortEstimateStep({
               <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Duration
               </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary-text">
                 {mlWeeksP50} weeks
               </p>
               <div className="mt-1.5 flex gap-2">
@@ -1708,7 +1708,7 @@ export function EffortEstimateStep({
               <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Peak Team Size
               </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary-text">
                 {mlPeakTeamP50} FTE
               </p>
               <div className="mt-1.5 flex gap-2">
@@ -1730,7 +1730,7 @@ export function EffortEstimateStep({
               <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Effort Density
               </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary-text">
                 {fmt(mlEffortDensity)} hrs/GSI
               </p>
               <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -1746,7 +1746,7 @@ export function EffortEstimateStep({
                   {mlRiskLevel}
                 </Badge>
               </div>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-primary-text">
                 ±{(mlSpreadWeeks / 2).toFixed(1)} weeks
               </p>
               <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -1760,7 +1760,7 @@ export function EffortEstimateStep({
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border p-4">
               <p className="text-xs font-medium text-muted-foreground">Wave Count Recommendation</p>
-              <p className="mt-1 text-2xl font-semibold text-primary">
+              <p className="mt-1 text-2xl font-semibold text-primary-text">
                 {waveCount} wave{waveCount === 1 ? "" : "s"}
               </p>
               <p className="mt-1 text-[11px] text-muted-foreground">
@@ -1780,10 +1780,10 @@ export function EffortEstimateStep({
                 </div>
                 <div className="relative h-8 overflow-hidden rounded-md bg-muted">
                   <div className="absolute inset-y-0 left-0 flex w-full items-center justify-between border-l-2 border-primary bg-primary/10 px-2">
-                    <span className="text-[11px] font-medium text-primary">
+                    <span className="text-[11px] font-medium text-primary-text">
                       Wave 1 · Wk 0-{mlWeeksP50}
                     </span>
-                    <span className="text-[11px] font-semibold text-primary">100%</span>
+                    <span className="text-[11px] font-semibold text-primary-text">100%</span>
                   </div>
                 </div>
                 <p className="mt-1 text-[10px] text-muted-foreground">
@@ -1887,12 +1887,12 @@ export function EffortEstimateStep({
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
             <Card className="gap-1 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/0 py-5 ring-primary/20">
               <CardHeader className="gap-1 px-4">
-                <CardDescription className="text-xs font-semibold tracking-wide text-primary/80 uppercase">
+                <CardDescription className="text-xs font-semibold tracking-wide text-primary-text/80 uppercase">
                   Man-Hours Saved
                 </CardDescription>
-                <CardTitle className="text-3xl font-bold tabular-nums text-primary">
+                <CardTitle className="text-3xl font-bold tabular-nums text-primary-text">
                   {fmt(agentTotalHoursSaved)}
-                  <span className="ml-1 text-base font-medium text-primary/70">hrs</span>
+                  <span className="ml-1 text-base font-medium text-primary-text/70">hrs</span>
                 </CardTitle>
               </CardHeader>
               <p className="px-4 text-xs text-muted-foreground">
@@ -2044,13 +2044,13 @@ export function EffortEstimateStep({
                     </div>
                     {category.rows.map((row) => (
                       <div key={row.label} className="contents">
-                        <div className="border-b border-border bg-white px-3 py-2.5 text-sm text-foreground dark:bg-gray-900">
+                        <div className="border-b border-border bg-white px-3 py-2.5 text-sm text-foreground dark:bg-neutral-900">
                           {row.label}
                         </div>
                         <div className="border-b border-x border-emerald-200 bg-emerald-50/30 px-3 py-2.5 text-center text-sm font-semibold tabular-nums text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/15 dark:text-emerald-400">
                           {row.agent}
                         </div>
-                        <div className="border-b border-border bg-white px-3 py-2.5 text-center text-sm tabular-nums text-muted-foreground dark:bg-gray-900">
+                        <div className="border-b border-border bg-white px-3 py-2.5 text-center text-sm tabular-nums text-muted-foreground dark:bg-neutral-900">
                           {row.manual}
                         </div>
                       </div>
@@ -2081,7 +2081,7 @@ export function EffortEstimateStep({
                 <tbody>
                   {agentGoalRows.map((row) => (
                     <tr key={row.key} className="border-b border-border">
-                      <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                      <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                       <td className="px-3 py-2.5">
                         <span className="h-2 w-32 overflow-hidden rounded-full bg-muted inline-block align-middle">
                           <span
@@ -2166,7 +2166,7 @@ export function EffortEstimateStep({
                           {row.activity}
                         </span>
                         <span className="flex flex-wrap gap-1">
-                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary-text">
                             {row.phaseLabel}
                           </span>
                           {automatable && (
@@ -2277,7 +2277,7 @@ export function EffortEstimateStep({
                       <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                         {fmt(row.hoursWithAgent)}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                      <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                         {row.pctReduction.toFixed(1)}%
                       </td>
                     </tr>
@@ -2318,9 +2318,9 @@ export function EffortEstimateStep({
                 <ArrowRight className="mb-1 h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-[11px] text-muted-foreground">Agent Scenario</p>
-                  <p className="text-2xl font-semibold tabular-nums text-primary">
+                  <p className="text-2xl font-semibold tabular-nums text-primary-text">
                     {agentDurationWithAgentWeeks}
-                    <span className="ml-1 text-sm font-medium text-primary/70">wks</span>
+                    <span className="ml-1 text-sm font-medium text-primary-text/70">wks</span>
                   </p>
                 </div>
               </div>
@@ -2361,7 +2361,7 @@ export function EffortEstimateStep({
       )}
 
       {mode === "compare" && (
-        <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-gray-900">
+        <div className="rounded-xl border border-border bg-white p-5 shadow-sm dark:bg-neutral-900">
           <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300">
             Side-by-side comparison · Formula (KDM) vs ML Prediction
           </p>
@@ -2511,7 +2511,7 @@ export function EffortEstimateStep({
                             weight="fill"
                             className={cn(
                               "h-4 w-4 shrink-0",
-                              scenario.key === "formula" ? "text-primary" : "text-cyan-500"
+                              scenario.key === "formula" ? "text-primary-text" : "text-cyan-500"
                             )}
                           />
                           {scenario.name}
@@ -2523,7 +2523,7 @@ export function EffortEstimateStep({
                               className={cn(
                                 "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                 scenario.key === "formula"
-                                  ? "bg-primary/10 text-primary"
+                                  ? "bg-primary/10 text-primary-text"
                                   : "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
                               )}
                             >
@@ -2596,7 +2596,7 @@ export function EffortEstimateStep({
                     <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                       {fmt(totalEffort)} hrs
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                    <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                       {fmt(mlP50)} hrs
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-amber-600 dark:text-amber-400">
@@ -2611,7 +2611,7 @@ export function EffortEstimateStep({
                     <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                       {durationWeeks.toFixed(1)} weeks
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                    <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                       {mlWeeksP50} weeks
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-amber-600 dark:text-amber-400">
@@ -2626,7 +2626,7 @@ export function EffortEstimateStep({
                     <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
                       {peakFte.toFixed(1)} FTE
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-primary">
+                    <td className="px-3 py-2.5 text-right tabular-nums text-primary-text">
                       {mlPeakTeamP50.toFixed(1)} FTE
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-amber-600 dark:text-amber-400">
@@ -2713,7 +2713,7 @@ export function EffortEstimateStep({
                           : 0;
                     return (
                       <tr key={row.key} className="border-b border-border">
-                        <td className="px-3 py-2.5 font-medium text-primary">{row.label}</td>
+                        <td className="px-3 py-2.5 font-medium text-primary-text">{row.label}</td>
                         <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
                           {mlRow.mlPct.toFixed(1)}%
                         </td>

@@ -25,7 +25,7 @@ export const projectStatusLabel: Record<ProjectStatus, string> = {
 // Bordered pastel style matching the "Seeded" master-data badge (border-{c}-200
 // bg-{c}-50 text-{c}-700 / dark:border-{c}-900 dark:bg-{c}-950 dark:text-{c}-400).
 export const projectStatusBadgeClass: Record<ProjectStatus, string> = {
-  draft: "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400",
+  draft: "border-gray-200 bg-gray-50 text-gray-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400",
   submitted: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400",
   "in-estimate": "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-400",
   won: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400",
@@ -36,7 +36,7 @@ export const projectStatusBadgeClass: Record<ProjectStatus, string> = {
 // Solid dot colors matching each status's badge hue, for use in the Status
 // select trigger/menu items.
 export const projectStatusDotClass: Record<ProjectStatus, string> = {
-  draft: "bg-gray-400 dark:bg-gray-500",
+  draft: "bg-gray-400 dark:bg-neutral-500",
   submitted: "bg-amber-500",
   "in-estimate": "bg-blue-500",
   won: "bg-emerald-500",

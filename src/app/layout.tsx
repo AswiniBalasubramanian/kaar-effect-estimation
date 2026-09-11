@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { AssistantDock } from "@/components/assistant-dock";
 import { FontPreferenceSync } from "@/components/font-preference-sync";
+import { ThemePreferenceSync } from "@/components/theme-preference-sync";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectsProvider } from "@/lib/projects-context";
@@ -44,10 +45,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-font="geist"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${figtree.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem("kee-theme-preference")||"system";var d=p==="dark"||(p==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";}}catch(e){}})();`,
+          }}
+        />
         <FontPreferenceSync />
+        <ThemePreferenceSync />
         <TooltipProvider delayDuration={200}>
           <ProjectsProvider>
             <TopBarContentProvider>

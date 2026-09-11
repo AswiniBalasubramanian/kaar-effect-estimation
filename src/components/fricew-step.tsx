@@ -157,14 +157,14 @@ export function FricewStep({
         </div>
       ) : (
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
-          <CheckCircle className="h-4 w-4 shrink-0 text-primary" weight="fill" />
+          <CheckCircle className="h-4 w-4 shrink-0 text-primary-text" weight="fill" />
           <span className="font-medium text-foreground">
             {hasDevEffort ? "I have development effort" : "I don't have development effort"}
           </span>
           <button
             type="button"
             onClick={() => setHasDevEffort(null)}
-            className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
+            className="ml-auto shrink-0 text-xs font-medium text-primary-text hover:underline"
           >
             Change
           </button>
@@ -213,7 +213,7 @@ export function FricewStep({
 
           <div className="mt-4 overflow-x-auto">
         <Table>
-          <TableHeader className="bg-white dark:bg-gray-900">
+          <TableHeader className="bg-white dark:bg-neutral-900">
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-muted-foreground">Type</TableHead>
               <TableHead className="text-muted-foreground">Skill</TableHead>
@@ -271,7 +271,7 @@ export function FricewStep({
                 <TableCell className="text-right font-medium tabular-nums text-foreground">
                   {row.objects}
                 </TableCell>
-                <TableCell className="text-right font-medium tabular-nums text-primary">
+                <TableCell className="text-right font-medium tabular-nums text-primary-text">
                   {row.devHrs}
                 </TableCell>
               </TableRow>
@@ -283,7 +283,7 @@ export function FricewStep({
               <TableCell className="text-right font-semibold tabular-nums text-foreground">
                 {totalObjects}
               </TableCell>
-              <TableCell className="text-right font-semibold tabular-nums text-primary">
+              <TableCell className="text-right font-semibold tabular-nums text-primary-text">
                 {totalDevHrs}
               </TableCell>
             </TableRow>

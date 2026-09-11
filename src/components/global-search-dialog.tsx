@@ -143,20 +143,20 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
                   onClick={() => go(item)}
                   className={cn(
                     "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors",
-                    index === activeIndex ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                    index === activeIndex ? "bg-primary/10 text-primary-text" : "text-foreground hover:bg-muted"
                   )}
                 >
                   <item.icon
                     aria-hidden="true"
                     className={cn(
                       "h-4 w-4 shrink-0",
-                      index === activeIndex ? "text-primary" : "text-muted-foreground"
+                      index === activeIndex ? "text-primary-text" : "text-muted-foreground"
                     )}
                   />
                   <span className="min-w-0 flex-1 truncate font-medium">{item.label}</span>
                   <span className="shrink-0 truncate text-xs text-muted-foreground">{item.meta}</span>
                   {index === activeIndex && (
-                    <ArrowBendUpLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+                    <ArrowBendUpLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-primary-text/60" />
                   )}
                 </button>
               ))

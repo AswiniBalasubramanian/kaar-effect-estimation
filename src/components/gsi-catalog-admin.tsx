@@ -179,7 +179,7 @@ const emptyForm: FormState = {
 function statusBadgeClass(status: GsiCatalogRow["status"]) {
   return status === "Active"
     ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
-    : "border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400";
+    : "border-gray-200 bg-gray-50 text-gray-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400";
 }
 
 export function GsiCatalogAdmin({
@@ -450,7 +450,7 @@ export function GsiCatalogAdmin({
                   className={cn(
                     "gap-1.5 rounded-full",
                     isActive &&
-                      "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
+                      "border-primary/40 bg-primary/5 text-primary-text hover:bg-primary/10 dark:bg-primary/10"
                   )}
                 >
                   {def.label}
@@ -473,7 +473,7 @@ export function GsiCatalogAdmin({
                           return next;
                         })
                       }
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="text-xs font-medium text-primary-text hover:underline"
                     >
                       Reset
                     </button>
@@ -527,7 +527,7 @@ export function GsiCatalogAdmin({
           <SelectTrigger
             size="sm"
             className={cn(
-              isGrouped && "border-primary/40 bg-primary/5 text-primary dark:bg-primary/10"
+              isGrouped && "border-primary/40 bg-primary/5 text-primary-text dark:bg-primary/10"
             )}
           >
             <Stack className="h-3.5 w-3.5" />
@@ -551,7 +551,7 @@ export function GsiCatalogAdmin({
               className={cn(
                 "gap-1.5",
                 hiddenCount > 0 &&
-                  "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 dark:bg-primary/10"
+                  "border-primary/40 bg-primary/5 text-primary-text hover:bg-primary/10 dark:bg-primary/10"
               )}
             >
               <ColumnsIcon className="h-3.5 w-3.5" />

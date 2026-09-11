@@ -44,6 +44,11 @@ import {
   useFontPreference,
   type FontPreference,
 } from "@/hooks/use-font-preference";
+import {
+  setThemePreference,
+  useThemePreference,
+  type ThemePreference,
+} from "@/hooks/use-theme-preference";
 
 const navLinks = [
   { label: "Projects", href: "/", icon: Folder },
@@ -56,6 +61,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { starredProjects } = useProjects();
   const fontPreference = useFontPreference();
+  const themePreference = useThemePreference();
 
   return (
     <Sidebar
@@ -63,6 +69,7 @@ export function AppSidebar() {
       className="top-12 h-[calc(100svh-3rem)]"
     >
       <SidebarContent>
+        <nav aria-label="Main">
         <SidebarGroup className="pt-3">
           <SidebarGroupContent>
             <SidebarMenu>
@@ -86,6 +93,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        </nav>
 
         {starredProjects.length > 0 && (
           <>
@@ -119,7 +127,7 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   size="lg"
                   tooltip="Aswini"
-                  className="bg-white hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-900"
+                  className="bg-white hover:bg-white dark:bg-neutral-900 dark:hover:bg-neutral-900"
                 >
                   <Avatar className="h-6 w-6 border border-sidebar-border">
                     <AvatarFallback className="bg-sidebar-primary/15 text-xs font-medium text-sidebar-primary">
@@ -155,6 +163,29 @@ export function AppSidebar() {
                   <DropdownMenuSubTrigger>Appearance</DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
                     <DropdownMenuSubContent>
+                      <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                        Theme
+                      </DropdownMenuLabel>
+                      <DropdownMenuRadioGroup
+                        value={themePreference}
+                        onValueChange={(value) =>
+                          setThemePreference(value as ThemePreference)
+                        }
+                      >
+                        <DropdownMenuRadioItem value="light">
+                          Light
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="dark">
+                          Dark
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="system">
+                          System
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                        Font
+                      </DropdownMenuLabel>
                       <DropdownMenuRadioGroup
                         value={fontPreference}
                         onValueChange={(value) =>
