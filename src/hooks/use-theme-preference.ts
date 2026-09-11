@@ -4,7 +4,7 @@ import * as React from "react"
 
 export const THEME_STORAGE_KEY = "kee-theme-preference"
 export type ThemePreference = "light" | "dark" | "system"
-const DEFAULT_THEME: ThemePreference = "system"
+const DEFAULT_THEME: ThemePreference = "light"
 
 type Listener = () => void
 const listeners = new Set<Listener>()
