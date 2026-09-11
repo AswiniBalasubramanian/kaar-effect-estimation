@@ -38,6 +38,8 @@ export const instanceDrivers: InstanceDriver[] = [
 
 export const gsiLevels: GsiLevel[] = ["L3", "L4", "L5"];
 
+export const gsiComplexities: GsiComplexity[] = ["L", "M", "H"];
+
 export const sapProducts: SapProduct[] = [
   "S4H_OnPrem",
   "S4H_Cloud",

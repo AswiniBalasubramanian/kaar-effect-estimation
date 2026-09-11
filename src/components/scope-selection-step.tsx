@@ -47,6 +47,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -57,6 +67,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   gsiCatalog,
+  gsiComplexities,
   gsiLevels,
   instanceDrivers,
   sapProducts,
@@ -115,6 +126,13 @@ export function ScopeSelectionStep({
   }
   const [businessAreaFilter, setBusinessAreaFilter] = useState("all");
   const [processGroupFilter, setProcessGroupFilter] = useState("all");
+  const [complexityFilter, setComplexityFilter] = useState<GsiComplexity[]>([]);
+  const [levelFilter, setLevelFilter] = useState<GsiLevel[]>([]);
+  const [driverFilter, setDriverFilter] = useState<InstanceDriver[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [pendingComplexityFilter, setPendingComplexityFilter] = useState<GsiComplexity[]>([]);
+  const [pendingLevelFilter, setPendingLevelFilter] = useState<GsiLevel[]>([]);
+  const [pendingDriverFilter, setPendingDriverFilter] = useState<InstanceDriver[]>([]);
   const [visibleColumns, setVisibleColumns] = useState({
     id: true,
     name: true,
@@ -190,7 +208,9 @@ export function ScopeSelectionStep({
     [activeProduct, businessAreaFilter]
   );
 
-  const filteredCatalog = useMemo(() => {
+  // Scoped by product/area/group/search only — used as the base for the Filter
+  // popover's per-chip counts, before complexity/level/driver filters are applied.
+  const searchScopedCatalog = useMemo(() => {
     const q = search.trim().toLowerCase();
     return gsiCatalog.filter((item) => {
       if (item.product !== activeProduct) return false;
@@ -201,6 +221,82 @@ export function ScopeSelectionStep({
       return true;
     });
   }, [activeProduct, businessAreaFilter, processGroupFilter, search]);
+
+  const complexityCounts = useMemo(() => {
+    const map = new Map<GsiComplexity, number>();
+    for (const item of searchScopedCatalog) {
+      map.set(item.defaultComplexity, (map.get(item.defaultComplexity) ?? 0) + 1);
+    }
+    return map;
+  }, [searchScopedCatalog]);
+
+  const levelCounts = useMemo(() => {
+    const map = new Map<GsiLevel, number>();
+    for (const item of searchScopedCatalog) {
+      map.set(item.defaultLevel, (map.get(item.defaultLevel) ?? 0) + 1);
+    }
+    return map;
+  }, [searchScopedCatalog]);
+
+  const driverCounts = useMemo(() => {
+    const map = new Map<InstanceDriver, number>();
+    for (const item of searchScopedCatalog) {
+      map.set(item.defaultInstanceDriver, (map.get(item.defaultInstanceDriver) ?? 0) + 1);
+    }
+    return map;
+  }, [searchScopedCatalog]);
+
+  const activeFilterCount = complexityFilter.length + levelFilter.length + driverFilter.length;
+
+  const filteredCatalog = useMemo(() => {
+    return searchScopedCatalog.filter((item) => {
+      if (complexityFilter.length > 0 && !complexityFilter.includes(item.defaultComplexity))
+        return false;
+      if (levelFilter.length > 0 && !levelFilter.includes(item.defaultLevel)) return false;
+      if (driverFilter.length > 0 && !driverFilter.includes(item.defaultInstanceDriver))
+        return false;
+      return true;
+    });
+  }, [searchScopedCatalog, complexityFilter, levelFilter, driverFilter]);
+
+  function openFilterPopover(open: boolean) {
+    if (open) {
+      setPendingComplexityFilter(complexityFilter);
+      setPendingLevelFilter(levelFilter);
+      setPendingDriverFilter(driverFilter);
+    }
+    setFilterOpen(open);
+  }
+
+  function togglePendingComplexity(value: GsiComplexity) {
+    setPendingComplexityFilter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  }
+  function togglePendingLevel(value: GsiLevel) {
+    setPendingLevelFilter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  }
+  function togglePendingDriver(value: InstanceDriver) {
+    setPendingDriverFilter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  }
+  function applyFilters() {
+    setComplexityFilter(pendingComplexityFilter);
+    setLevelFilter(pendingLevelFilter);
+    setDriverFilter(pendingDriverFilter);
+    setFilterOpen(false);
+  }
+  function clearFilters() {
+    setPendingComplexityFilter([]);
+    setPendingLevelFilter([]);
+    setPendingDriverFilter([]);
+    setComplexityFilter([]);
+    setLevelFilter([]);
+    setDriverFilter([]);
+  }
 
   const sortedFilteredCatalog = useMemo(() => {
     function columnValue(item: GsiCatalogItem) {
@@ -434,27 +530,218 @@ export function ScopeSelectionStep({
               </div>
 
               <div className="ml-auto flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-label="Filter"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <FunnelSimple className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Sort"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <ArrowsDownUp className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Group"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <Stack className="h-4 w-4" />
-                </button>
+                <Popover open={filterOpen} onOpenChange={openFilterPopover}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Filter scope items"
+                      title="Filter"
+                      aria-expanded={filterOpen}
+                      className={cn(
+                        "relative flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                        activeFilterCount > 0
+                          ? "bg-primary/10 text-primary-text hover:bg-primary/15"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <FunnelSimple className="h-4 w-4" />
+                      {activeFilterCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[min(92vw,480px)] max-w-none gap-0 p-0">
+                    <div className="flex items-start justify-between gap-3 px-4 pt-3.5">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Filters</p>
+                        <p className="text-xs text-muted-foreground">
+                          Showing {filteredCatalog.length} of {searchScopedCatalog.length} scope
+                          items
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={clearFilters}
+                          className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                        >
+                          Clear all
+                        </button>
+                        <Button size="sm" onClick={applyFilters}>
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex divide-x divide-border overflow-x-auto pb-3">
+                      <div className="flex min-w-32 flex-1 flex-col gap-1 px-3 py-1">
+                        <p className="px-1 text-xs font-semibold text-foreground">Complexity</p>
+                        <div className="flex flex-col gap-0.5">
+                          {gsiComplexities.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => togglePendingComplexity(c)}
+                              className={cn(
+                                "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                                pendingComplexityFilter.includes(c)
+                                  ? "bg-primary/10 text-primary-text ring-1 ring-primary/30"
+                                  : "text-foreground hover:bg-muted"
+                              )}
+                            >
+                              <span>{c}</span>
+                              <span
+                                className={cn(
+                                  "shrink-0 text-[11px]",
+                                  pendingComplexityFilter.includes(c)
+                                    ? "text-primary-text/70"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {complexityCounts.get(c) ?? 0}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex min-w-32 flex-1 flex-col gap-1 px-3 py-1">
+                        <p className="px-1 text-xs font-semibold text-foreground">Level</p>
+                        <div className="flex flex-col gap-0.5">
+                          {gsiLevels.map((l) => (
+                            <button
+                              key={l}
+                              type="button"
+                              onClick={() => togglePendingLevel(l)}
+                              className={cn(
+                                "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                                pendingLevelFilter.includes(l)
+                                  ? "bg-primary/10 text-primary-text ring-1 ring-primary/30"
+                                  : "text-foreground hover:bg-muted"
+                              )}
+                            >
+                              <span>{l}</span>
+                              <span
+                                className={cn(
+                                  "shrink-0 text-[11px]",
+                                  pendingLevelFilter.includes(l)
+                                    ? "text-primary-text/70"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {levelCounts.get(l) ?? 0}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex min-w-40 flex-1 flex-col gap-1 px-3 py-1">
+                        <p className="px-1 text-xs font-semibold text-foreground">
+                          Instance driver
+                        </p>
+                        <div className="flex flex-col gap-0.5">
+                          {instanceDrivers.map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => togglePendingDriver(d)}
+                              className={cn(
+                                "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                                pendingDriverFilter.includes(d)
+                                  ? "bg-primary/10 text-primary-text ring-1 ring-primary/30"
+                                  : "text-foreground hover:bg-muted"
+                              )}
+                            >
+                              <span className="truncate">{d}</span>
+                              <span
+                                className={cn(
+                                  "shrink-0 text-[11px]",
+                                  pendingDriverFilter.includes(d)
+                                    ? "text-primary-text/70"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {driverCounts.get(d) ?? 0}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Sort scope items"
+                      title="Sort"
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+                        sortColumn && "bg-muted text-foreground"
+                      )}
+                    >
+                      <ArrowsDownUp className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                      Sort by
+                    </DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={sortColumn ?? "id"}
+                      onValueChange={(value) =>
+                        setSortColumn(value as "id" | "name" | "cplx" | "level")
+                      }
+                    >
+                      <DropdownMenuRadioItem value="id">ID</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="cplx">Complexity</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="level">Level</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={sortDirection}
+                      onValueChange={(value) => setSortDirection(value as "asc" | "desc")}
+                    >
+                      <DropdownMenuRadioItem value="asc">Ascending</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="desc">Descending</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Group scope items"
+                      title="Group"
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Stack className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                      Grouped by Business Area › Process Group
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        const allKeys: string[] = [];
+                        for (const [area, groups] of groupedCatalog.entries()) {
+                          allKeys.push(`area:${area}`);
+                          for (const group of groups.keys()) allKeys.push(`group:${area}:${group}`);
+                        }
+                        setExpandedGroups(new Set(allKeys));
+                      }}
+                    >
+                      Collapse all groups
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setExpandedGroups(new Set())}>
+                      Expand all groups
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   type="button"
                   aria-label="Search"

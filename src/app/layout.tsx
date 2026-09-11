@@ -44,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      data-font="geist"
+      data-font="dm-sans"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${figtree.variable} ${dmSans.variable} h-full antialiased`}
     >

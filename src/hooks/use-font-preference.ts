@@ -4,7 +4,7 @@ import * as React from "react"
 
 export const FONT_STORAGE_KEY = "kee-font-preference"
 export type FontPreference = "geist" | "figtree" | "dm-sans"
-const DEFAULT_FONT: FontPreference = "geist"
+const DEFAULT_FONT: FontPreference = "dm-sans"
 
 type Listener = () => void
 const listeners = new Set<Listener>()
