@@ -18,33 +18,66 @@ interface Message {
   text: string;
 }
 
+const STOPWORDS = new Set([
+  "a", "an", "the", "is", "are", "was", "were", "what", "whats", "who", "whom", "which",
+  "how", "do", "does", "did", "can", "could", "should", "would", "will", "i", "you", "we",
+  "they", "it", "this", "that", "these", "those", "of", "in", "on", "at", "to", "for",
+  "with", "about", "tell", "me", "explain", "define", "meaning", "mean", "please", "and",
+  "or", "if", "as", "by", "from", "be", "been", "being", "there", "here",
+]);
+
+function extractKeywords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .replace(/[?.,!;:"'()]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !STOPWORDS.has(w));
+}
+
+function scoreText(text: string, keywords: string[], fullPhrase: string): number {
+  const lower = text.toLowerCase();
+  let score = 0;
+  for (const kw of keywords) {
+    if (lower.includes(kw)) score += 1;
+  }
+  if (fullPhrase.length > 0 && lower.includes(fullPhrase)) score += keywords.length;
+  return score;
+}
+
 function buildAnswer(query: string): string {
-  const q = query.trim().toLowerCase();
+  const notFound = `I couldn't find "${query}" in the wizard steps, field glossary, or formulas. Try a shorter keyword, or check the full Glossary & Formula Guide page.`;
 
-  const stepMatches = wizardSteps.filter(
-    (s) => s.title.toLowerCase().includes(q) || s.subtitle.toLowerCase().includes(q)
-  );
+  const keywords = extractKeywords(query);
+  if (keywords.length === 0) return notFound;
 
-  const rowMatches = glossarySections.flatMap((section) =>
-    section.rows
-      .filter(
-        (r) =>
-          r.term.toLowerCase().includes(q) ||
-          r.meaning.toLowerCase().includes(q) ||
-          r.drives.toLowerCase().includes(q)
-      )
-      .map((r) => ({ section: section.title, ...r }))
-  );
+  const fullPhrase = query.trim().toLowerCase().replace(/[?.,!;:"'()]/g, "").trim();
 
-  const formulaMatches = formulaRows.filter(
-    (f) =>
-      f.computation.toLowerCase().includes(q) ||
-      f.formula.toLowerCase().includes(q) ||
-      f.why.toLowerCase().includes(q)
-  );
+  const stepMatches = wizardSteps
+    .map((s) => ({ s, score: scoreText(`${s.title} ${s.subtitle}`, keywords, fullPhrase) }))
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((m) => m.s);
+
+  const rowMatches = glossarySections
+    .flatMap((section) =>
+      section.rows.map((r) => ({
+        section: section.title,
+        row: r,
+        score: scoreText(`${r.term} ${r.meaning} ${r.drives}`, keywords, fullPhrase),
+      }))
+    )
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((m) => ({ section: m.section, ...m.row }));
+
+  const formulaMatches = formulaRows
+    .map((f) => ({ f, score: scoreText(`${f.computation} ${f.formula} ${f.why}`, keywords, fullPhrase) }))
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((m) => m.f);
 
   if (stepMatches.length === 0 && rowMatches.length === 0 && formulaMatches.length === 0) {
-    return `I couldn't find "${query}" in the wizard steps, field glossary, or formulas. Try a shorter keyword, or check the full Glossary & Formula Guide page.`;
+    return notFound;
   }
 
   const parts: string[] = [];

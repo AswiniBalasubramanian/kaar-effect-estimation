@@ -38,7 +38,11 @@ export function WelcomeSplash() {
 
   useEffect(() => {
     try {
-      if (!window.localStorage.getItem(STORAGE_KEY)) {
+      const [navEntry] = performance.getEntriesByType(
+        "navigation"
+      ) as PerformanceNavigationTiming[];
+      const isReload = navEntry?.type === "reload";
+      if (isReload || !window.localStorage.getItem(STORAGE_KEY)) {
         setOpen(true);
       }
     } catch {

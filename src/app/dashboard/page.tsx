@@ -23,7 +23,7 @@ import {
   recentEstimates,
 } from "@/lib/dashboard-data";
 
-const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
+const dateTimeFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -31,7 +31,7 @@ const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
-const numberFormat = new Intl.NumberFormat(undefined);
+const numberFormat = new Intl.NumberFormat("en-US");
 
 export default function DashboardPage() {
   const crumbs = useMemo(() => [{ label: "Dashboard" }], []);
